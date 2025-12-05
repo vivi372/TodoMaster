@@ -28,6 +28,7 @@ Desktop.ini
 /backEnd/.mvn/
 /backEnd/mvnw
 /backEnd/mvnw.cmd
+/backEnd/.env
 
 # Maven specific
 **/target/
@@ -49,6 +50,7 @@ Desktop.ini
 # -----------------------------
 /frontEnd/node_modules/
 /frontEnd/dist/
+/frontEnd/.env
 **/node_modules/
 **/dist/
 
