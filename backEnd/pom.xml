@@ -108,7 +108,7 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- AspectJ -->
+		<!-- AspectJ(AOP) -->
 		<dependency>
 			<groupId>org.aspectj</groupId>
 			<artifactId>aspectjrt</artifactId>			
@@ -118,6 +118,12 @@
 			<groupId>org.aspectj</groupId>
 			<artifactId>aspectjweaver</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<!-- P6Spy(DB 쿼리 로그) -->
+		<dependency>
+			<groupId>p6spy</groupId>
+			<artifactId>p6spy</artifactId>
+			<version>3.9.1</version>
 		</dependency>
 	</dependencies>
 

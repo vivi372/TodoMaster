@@ -8,7 +8,7 @@ server:
 
 spring:
   datasource:
-    driver-class-name: oracle.jdbc.OracleDriver
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -19,3 +19,15 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     jdbc-type-for-null: 'NULL'
+
+logging:
+  level:
+    # SQL 쿼리가 포함된 로그를 DEBUG 레벨로 출력하도록 설정
+    com.todoMaster: DEBUG # [선택] 본인 프로젝트의 루트 패키지 (예: com.todoMaster)
+    
+    # MyBatis가 DB 작업을 처리하는 매퍼 인터페이스의 패키지 경로를 DEBUG로 설정 (필수)
+    # 아래 예시는 'com.todoMaster.user.mapper' 경로에 매퍼가 있다고 가정합니다.
+    # com.todoMaster.user.mapper: DEBUG 
+    
+    # [선택] P6Spy 로그 출력을 보장하기 위해 DEBUG 설정
+    com.p6spy: DEBUG
