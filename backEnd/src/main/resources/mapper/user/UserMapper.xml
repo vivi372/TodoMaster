@@ -54,5 +54,15 @@
             UPDATED_AT = SYSDATE
         WHERE USER_ID = #{userId}
     </update>
+    
+    <!-- 회원 정보 수정 -->
+    <update id="updateUserInfo">
+		UPDATE USER_INFO
+		SET
+		NICKNAME = #{nickname},
+		PROFILE_IMG = #{profileImg},
+		UPDATED_AT = SYSDATE
+		WHERE USER_ID = #{userId}
+	</update>
 
 </mapper>

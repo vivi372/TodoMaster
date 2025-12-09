@@ -3,6 +3,7 @@ package com.todoMaster.user.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.todoMaster.user.dto.UserUpdateRequest;
 import com.todoMaster.user.vo.UserInfoVO;
 
 @Mapper
@@ -26,4 +27,7 @@ public interface UserMapper {
     		@Param("token") String token, 
     		@Param("salt") String salt
     );
+    
+    // 회원정보 수정
+    int updateUserInfo(Long userId, UserUpdateRequest request);
 }

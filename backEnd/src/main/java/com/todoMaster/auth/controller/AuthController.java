@@ -2,8 +2,8 @@ package com.todoMaster.auth.controller;
 
 import com.todoMaster.auth.dto.LoginRequest;
 import com.todoMaster.auth.dto.LoginResponse;
+import com.todoMaster.auth.dto.UserSignupRequest;
 import com.todoMaster.auth.service.AuthService;
-import com.todoMaster.user.dto.UserSignupRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

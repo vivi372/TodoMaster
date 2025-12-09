@@ -1,4 +1,4 @@
-package com.todoMaster.user.dto;
+package com.todoMaster.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

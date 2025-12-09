@@ -3,6 +3,7 @@ package com.todoMaster.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.todoMaster.auth.filter.JwtAuthenticationFilter;
@@ -37,7 +38,8 @@ public class SecurityConfig {
             // 2-1. CSRF (Cross-Site Request Forgery) 보호 기능을 비활성화합니다.
             // REST API 서버에서는 세션을 사용하지 않으므로 CSRF가 필요하지 않습니다.
             .csrf(cs -> cs.disable())
-            
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+         
             // 2-2. HTTP 요청에 대한 인가(Authorization) 규칙을 설정합니다.
             .authorizeHttpRequests(auth -> auth
                 // '/api/auth/'로 시작하는 모든 요청 (로그인, 토큰 갱신 등)은 인증 없이 허용합니다.
