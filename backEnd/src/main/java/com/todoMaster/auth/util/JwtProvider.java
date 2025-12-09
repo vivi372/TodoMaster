@@ -5,6 +5,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.todoMaster.global.exception.CustomException;
+import com.todoMaster.global.exception.ErrorCode;
+
 import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
@@ -31,6 +34,11 @@ public class JwtProvider {
 	 */
 	public JwtProvider(@Value("${jwt.secret}") String secret, @Value("${jwt.access-expire-minutes}") long accessMinutes,
 			@Value("${jwt.refresh-expire-days}") long refreshDays) {
+		// secret은 운영에서 충분히 긴 랜덤 문자열로 설정해야 함
+        if (secret == null || secret.length() < 32) {
+            // 짧은 키는 HMAC SHA 알고리즘에 적합하지 않으므로 미리 체크
+            throw new IllegalArgumentException("JWT secret is too short. Use a secure, long secret.");
+        }
 		// 주입받은 secret 문자열을 바이트 배열로 변환하여 HMAC SHA 키를 생성합니다.
 		this.key = Keys.hmacShaKeyFor(secret.getBytes());
 		// Access Token 만료 시간을 '분'에서 '밀리초'로 변환합니다.
@@ -84,9 +92,12 @@ public class JwtProvider {
 			// 서명 키를 설정하고 토큰을 파싱하여 Claims(payload)를 추출 시도
 			Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
 			return true; // 성공적으로 파싱되면 유효함
-		} catch (JwtException ex) {
-			// SignatureException, ExpiredJwtException, MalformedJwtException 등 모든 JWT 예외 처리
-			return false; // 유효하지 않음
+		} catch (ExpiredJwtException e) {
+			// 만료
+			throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+		} catch (JwtException | IllegalArgumentException e) {
+			// 서명불일치, 변조, 잘못된 토큰 등
+			throw new CustomException(ErrorCode.INVALID_TOKEN);
 		}
 	}
 
@@ -97,9 +108,15 @@ public class JwtProvider {
 	 * @throws JwtException 유효하지 않은 토큰일 경우 예외 발생
 	 */
 	public Long getUserId(String token) {
-		// 토큰을 파싱하여 JWT 본문(Body)에 해당하는 Claims를 가져옵니다.
-		Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-		// Subject(사용자 ID)를 가져와 Long 타입으로 변환 후 반환합니다.
-		return Long.valueOf(claims.getSubject());
+		try {
+			// 토큰을 파싱하여 JWT 본문(Body)에 해당하는 Claims를 가져옵니다.
+			Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+			// Subject(사용자 ID)를 가져와 Long 타입으로 변환 후 반환합니다.
+			return Long.valueOf(claims.getSubject());
+		} catch (ExpiredJwtException e) {
+			throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+		} catch (JwtException | IllegalArgumentException e) {
+			throw new CustomException(ErrorCode.INVALID_TOKEN);
+		}
 	}
 }

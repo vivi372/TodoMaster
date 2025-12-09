@@ -2,10 +2,12 @@ package com.todoMaster.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.todoMaster.auth.filter.JwtAuthenticationEntryPoint;
 import com.todoMaster.auth.filter.JwtAuthenticationFilter;
 import com.todoMaster.auth.util.JwtProvider;
 
@@ -32,6 +34,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // 1. JWT Provider를 사용하여 사용자 정의 JWT 인증 필터 인스턴스를 생성합니다.
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtProvider);
+        JwtAuthenticationEntryPoint entryPoint = new JwtAuthenticationEntryPoint();
 
         // 2. HTTP 보안 설정을 구성합니다.
         http
@@ -39,13 +42,16 @@ public class SecurityConfig {
             // REST API 서버에서는 세션을 사용하지 않으므로 CSRF가 필요하지 않습니다.
             .csrf(cs -> cs.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-         
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
             // 2-2. HTTP 요청에 대한 인가(Authorization) 규칙을 설정합니다.
             .authorizeHttpRequests(auth -> auth
                 // '/api/auth/'로 시작하는 모든 요청 (로그인, 토큰 갱신 등)은 인증 없이 허용합니다.
                 .requestMatchers("/api/auth/**").permitAll()
-                // 그 외 나머지 모든 요청은 반드시 인증(Authentication)이 필요합니다.
-                .anyRequest().authenticated()
+                /// 필요하면 정적 리소스 등도 permitAll로 추가
+                .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().permitAll()
             )
             
             // 2-3. 커스텀 JWT 필터를 등록합니다.
