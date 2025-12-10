@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.todoMaster.auth.dto.LoginResponse;
 import com.todoMaster.auth.util.JwtProvider;
+import com.todoMaster.global.dto.ApiResponse;
 import com.todoMaster.user.dto.ChangePasswordRequest;
+import com.todoMaster.user.dto.UserProfileResponse;
 import com.todoMaster.user.dto.UserUpdateRequest;
 import com.todoMaster.user.service.UserService;
 
@@ -40,17 +43,25 @@ public class UserController {
 
         userService.updateUser(userId, request);
 
-        return ResponseEntity.ok("회원 정보가 수정되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다."));
     }
     
     @PatchMapping("/password")
-    public void changePassword(@RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
         userService.changePassword(request);
+        
+        return ResponseEntity.ok(ApiResponse.success("비밀번호가 변경되었습니다."));
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo() {
-        return ResponseEntity.ok(userService.getMyInfo());
+    	
+    	 ApiResponse<UserProfileResponse> response = ApiResponse.success(
+         		"회원 정보 가져오기 성공"
+         		, userService.getMyInfo()
+         );
+    	
+        return ResponseEntity.ok(response);
     }   
     
     @DeleteMapping("/me")
@@ -58,6 +69,6 @@ public class UserController {
 
         userService.deleteUser();
 
-        return ResponseEntity.ok().body("회원 탈퇴 완료");
+        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
     }
 }

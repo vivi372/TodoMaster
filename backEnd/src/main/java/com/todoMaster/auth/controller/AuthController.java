@@ -5,6 +5,7 @@ import com.todoMaster.auth.dto.LoginResponse;
 import com.todoMaster.auth.dto.PasswordCheckRequest;
 import com.todoMaster.auth.dto.UserSignupRequest;
 import com.todoMaster.auth.service.AuthService;
+import com.todoMaster.global.dto.ApiResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,9 @@ public class AuthController {
     private final AuthService authService;
     
     @PostMapping("/signup")
-    public String signup(@RequestBody @Valid UserSignupRequest req) {
+    public ResponseEntity<?> signup(@RequestBody @Valid UserSignupRequest req) {
     	authService.signup(req);
-        return "SUCCESS";
+        return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
     }
 
     /**
@@ -35,7 +36,7 @@ public class AuthController {
      * - 응답 본문에는 access token, refresh는 HttpOnly 쿠키로 설정
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
         String combined = authService.login(req); // "access::refresh"
         String[] parts = combined.split("::", 2);
         String access = parts[0];
@@ -51,10 +52,15 @@ public class AuthController {
                 .maxAge(14 * 24 * 60 * 60) // 14일
                 .sameSite("Lax")
                 .build();
+        
+        ApiResponse<LoginResponse> response = ApiResponse.success(
+        		"로그인 성공"
+        		, new LoginResponse(access)
+        );
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(new LoginResponse(access));
+                .body(response);
     }
 
     /**
@@ -62,7 +68,7 @@ public class AuthController {
      * - 프론트는 쿠키를 자동으로 전송(axios withCredentials:true)
      */
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponse> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null) throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
         
         log.info(refreshToken);
@@ -79,8 +85,15 @@ public class AuthController {
                 .maxAge(14 * 24 * 60 * 60)
                 .sameSite("Lax")
                 .build();
+        
+        ApiResponse<LoginResponse> response = ApiResponse.success(
+        		"토큰 갱신 성공"
+        		, new LoginResponse(access)
+        );
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(new LoginResponse(access));
+        return ResponseEntity.ok()
+        		.header(HttpHeaders.SET_COOKIE, cookie.toString())
+        		.body(response);
     }
 
     /**
@@ -89,7 +102,7 @@ public class AuthController {
      * - 쿠키 삭제
      */
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader(name = "Authorization", required = false) String authHeader,
+    public ResponseEntity<?> logout(@RequestHeader(name = "Authorization", required = false) String authHeader,
                                          @CookieValue(name = "refreshToken", required = false) String refreshToken) {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -110,7 +123,9 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body("logout");
+        return ResponseEntity.ok()
+        		.header(HttpHeaders.SET_COOKIE, cookie.toString())
+        		.body(ApiResponse.success("로그아웃 성공"));
     }
     
     /**
@@ -119,9 +134,15 @@ public class AuthController {
      * @return 임시 비밀번호
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<String > resetPassword(String email) {
+    public ResponseEntity<?> resetPassword(String email) {
         String tempPassword = authService.resetPassword(email);
-        return ResponseEntity.ok(tempPassword);
+        
+        ApiResponse<String> response = ApiResponse.success(
+        		"임시 비밀번호 발급 완료"
+        		, tempPassword
+        );
+        
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -143,7 +164,7 @@ public class AuthController {
 
         authService.checkPassword(userId, request.getPassword());
 
-        return ResponseEntity.ok("비밀번호 확인 완료");
+        return ResponseEntity.ok(ApiResponse.success("비밀번호 확인 완료"));
     }
 
 }
