@@ -29,8 +29,12 @@ public interface UserMapper {
     );
     
     // 회원정보 수정
-    int updateUserInfo(Long userId, UserUpdateRequest request);
+    int updateUserInfo(@Param("userId") Long userId, @Param("request") UserUpdateRequest request);
     
     // 비밀번호 변경
     int updatePassword(@Param("userId") Long userId, @Param("password") String password);
+    
+    // 프로필 이미지 수정
+    int updateProfileImage(@Param("userId") Long userId,
+            @Param("profileImg") String profileImg);
 }

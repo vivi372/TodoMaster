@@ -31,3 +31,12 @@ logging:
     
     # [선택] P6Spy 로그 출력을 보장하기 위해 DEBUG 설정
     com.p6spy: DEBUG
+
+#  asw s3 연결 설정
+aws:
+  s3:
+    bucket: todolist-bucketvivi
+    region: ap-northeast-2
+  credentials:
+    accessKey: ${AWS_ACCESS_KEY}
+    secretKey: ${AWS_SECRET_KEY}

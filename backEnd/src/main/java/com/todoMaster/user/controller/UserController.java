@@ -1,6 +1,7 @@
 package com.todoMaster.user.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,5 +45,10 @@ public class UserController {
     @PatchMapping("/password")
     public void changePassword(@RequestBody ChangePasswordRequest request) {
         userService.changePassword(request);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyInfo() {
+        return ResponseEntity.ok(userService.getMyInfo());
     }
 }

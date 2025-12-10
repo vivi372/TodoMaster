@@ -6,10 +6,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
 import com.todoMaster.user.dto.ChangePasswordRequest;
+import com.todoMaster.user.dto.UserProfileResponse;
 import com.todoMaster.user.dto.UserUpdateRequest;
 import com.todoMaster.user.mapper.UserMapper;
 import com.todoMaster.user.vo.UserInfoVO;
@@ -63,6 +63,25 @@ public class UserService {
         if (updated == 0) {
             throw new CustomException(ErrorCode.UPDATE_FAILED);
         }
+    }
+    
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMyInfo() {
+        Long userId = getCurrentUserId();
+
+        UserInfoVO user = userMapper.findById(userId);
+
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return UserProfileResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profileImg(user.getProfileImg())
+                .provider(user.getProvider())
+                .build();
     }
 
     /**

@@ -47,6 +47,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // '/api/auth/'로 시작하는 모든 요청 (로그인, 토큰 갱신 등)은 인증 없이 허용합니다.
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/common/**").permitAll()
                 /// 필요하면 정적 리소스 등도 permitAll로 추가
                 .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
