@@ -1,6 +1,7 @@
 package com.todoMaster.user.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.todoMaster.auth.util.JwtProvider;
+import com.todoMaster.user.dto.ChangePasswordRequest;
 import com.todoMaster.user.dto.UserUpdateRequest;
 import com.todoMaster.user.service.UserService;
 
@@ -37,5 +39,10 @@ public class UserController {
         userService.updateUser(userId, request);
 
         return ResponseEntity.ok("회원 정보가 수정되었습니다.");
+    }
+    
+    @PatchMapping("/password")
+    public void changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
     }
 }

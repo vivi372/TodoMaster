@@ -30,4 +30,7 @@ public interface UserMapper {
     
     // 회원정보 수정
     int updateUserInfo(Long userId, UserUpdateRequest request);
+    
+    // 비밀번호 변경
+    int updatePassword(@Param("userId") Long userId, @Param("password") String password);
 }
