@@ -111,4 +111,16 @@ public class AuthController {
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body("logout");
     }
+    
+    /**
+     * 비밀번호 초기화 나중에 이메일을 통해 임시 비밀번호 지급
+     * @param email
+     * @return 임시 비밀번호
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<String > resetPassword(String email) {
+        String tempPassword = authService.resetPassword(email);
+        return ResponseEntity.ok(tempPassword);
+    }
+
 }

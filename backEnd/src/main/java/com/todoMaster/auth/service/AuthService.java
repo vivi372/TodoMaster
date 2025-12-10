@@ -6,13 +6,15 @@ import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.auth.util.TokenHashUtil;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
+import com.todoMaster.global.s3.S3Uploader;
 import com.todoMaster.user.mapper.UserMapper;
 import com.todoMaster.user.vo.UserInfoVO;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.http.HttpStatus;
+import java.util.UUID;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,22 +33,40 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final TokenHashUtil tokenHashUtil;
+    private final S3Uploader s3Uploader;
     
     public void signup(UserSignupRequest req) {
 
         if (userMapper.countByEmail(req.getEmail()) > 0) {
             throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
-        }
+        }        
 
-        UserInfoVO vo = new UserInfoVO();
-        vo.setEmail(req.getEmail());
-        vo.setPassword(passwordEncoder.encode(req.getPassword()));
-        vo.setNickname(req.getNickname());
+        try {            
+            UserInfoVO vo = new UserInfoVO();
+            vo.setEmail(req.getEmail());
+            vo.setPassword(passwordEncoder.encode(req.getPassword()));
+            vo.setNickname(req.getNickname());
+            vo.setProfileImg(req.getProfileImg());
 
-        int result = userMapper.insertUser(vo);
-        
-        if (result == 0) {
-            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            int result = userMapper.insertUser(vo);
+
+            if (result == 0) {
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (Exception e) {
+
+            // 🔥 여기서 S3 이미지 삭제
+            if (req.getProfileImg() != null) {
+                try {
+                    s3Uploader.delete(req.getProfileImg());
+                } catch (Exception s3e) {
+                    // 로그만 남기고 흐름은 막지 않음
+                    System.err.println("S3 이미지 삭제 실패: " + s3e.getMessage());
+                }
+            }
+
+            throw e; // 원래 예외 다시 던짐
         }
     }
 
@@ -139,6 +159,29 @@ public class AuthService {
     	if (result == 0) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    /**
+     * 비밀번호 초기화
+     * @param email
+     * @return 임시 비밀번호
+     */
+    public String resetPassword(String email) {
+
+        UserInfoVO user = userMapper.findByEmail(email);
+        if (user == null)
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        
+        // UUID를 통해서 임시 비밀번호 생성
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+        
+        // DB에 저장을 위해 비밀번호 인코딩
+        String encodePassword = passwordEncoder.encode(tempPassword);
+       
+        // 임시 비밀번호 DB에 저장
+        userMapper.updatePassword(user.getUserId(), encodePassword);
+
+        return tempPassword;
     }
 
     /**

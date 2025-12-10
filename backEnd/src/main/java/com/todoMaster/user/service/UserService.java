@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
+import com.todoMaster.global.s3.S3Uploader;
 import com.todoMaster.user.dto.ChangePasswordRequest;
 import com.todoMaster.user.dto.UserProfileResponse;
 import com.todoMaster.user.dto.UserUpdateRequest;
@@ -22,15 +23,47 @@ public class UserService {
 	
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final S3Uploader s3Uploader;
 	
 	@Transactional
     public void updateUser(Long userId, UserUpdateRequest request) {
+		
+		UserInfoVO oldUser = userMapper.findById(userId);
+		if (oldUser == null) {
+	        throw new CustomException(ErrorCode.USER_NOT_FOUND);
+	    }
+		
+		String newImgUrl = request.getProfileImg();  // 프론트에서 전달한 새 URL
 
-        int result = userMapper.updateUserInfo(userId, request);
+		try {
+	        int result = userMapper.updateUserInfo(userId, request);
 
-        if (result == 0) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
+	        if (result == 0) {
+	            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+	        }
+
+	        // 기존 이미지 삭제 조건
+	        if (newImgUrl != null
+	                && oldUser.getProfileImg() != null
+	                && !oldUser.getProfileImg().equals(newImgUrl)) {
+
+	            s3Uploader.delete(oldUser.getProfileImg());
+	        }
+
+	    } catch (Exception e) {
+	        // 🔥 DB 수정 실패 → 새로 업로드된 이미지 삭제 (롤백)
+	        if (newImgUrl != null
+	                && (oldUser.getProfileImg() == null || !oldUser.getProfileImg().equals(newImgUrl))) {
+
+	            try {
+	                s3Uploader.delete(newImgUrl);
+	            } catch (Exception s3e) {
+	                System.err.println("이미지 롤백 삭제 실패: " + s3e.getMessage());
+	            }
+	        }
+
+	        throw e;
+	    }
     }
 	
 	 /**

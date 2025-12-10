@@ -9,6 +9,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.time.LocalDateTime;
@@ -84,6 +85,49 @@ public class S3Uploader {
         } catch (Exception e) {
             // 업로드 중 발생한 모든 예외를 RuntimeException으로 감싸서 처리합니다.
             throw new RuntimeException("S3 업로드 실패: " + e.getMessage());
+        }
+    }
+    
+    
+    /**
+     * AWS S3에 저장된 파일을 파일의 URL을 기반으로 삭제합니다.
+     *
+     * @param fileUrl S3에 업로드된 파일의 전체 URL (예: https://bucket-name.s3.ap-northeast-2.amazonaws.com/folder/file_name.jpg)
+     * @throws RuntimeException S3 삭제 중 예외 발생 시
+     */
+    public void delete(String fileUrl) {
+        try {
+            // 1. 입력된 URL이 null이거나 공백인지 확인하여 유효하지 않으면 삭제를 건너뜁니다.
+            if (fileUrl == null || fileUrl.isBlank()) {
+                return; 
+            }
+
+            // 2. 설정 파일에서 버킷 이름을 가져옵니다.
+            String bucket = properties.getBucket();
+
+            // 3. 파일 URL에서 S3 도메인 부분을 추출합니다.
+            // 이는 URL에서 파일의 Key (S3 경로)를 분리하기 위함입니다.
+            String domain = "https://" + bucket + ".s3." + properties.getRegion() + ".amazonaws.com/";
+            
+            // 4. 파일 URL에서 도메인 부분을 제거하여 파일의 Key (S3 저장 경로와 파일명)를 얻습니다.
+            // 예: "folder/file_name.jpg"
+            String key = fileUrl.replace(domain, "");
+
+            // 5. S3Client 객체를 가져옵니다. (getClient() 메서드는 인증 정보를 포함한 클라이언트를 생성합니다.)
+            S3Client s3 = getClient();
+
+            // 6. DeleteObjectRequest (삭제 요청) 객체를 생성합니다.
+            DeleteObjectRequest request = DeleteObjectRequest.builder()
+                    .bucket(bucket) // 대상 버킷 이름 설정
+                    .key(key)       // 삭제할 객체의 Key (경로 + 파일명) 설정
+                    .build();
+
+            // 7. S3에 파일 삭제 요청을 보냅니다.
+            s3.deleteObject(request);
+
+        } catch (Exception e) {
+            // 삭제 중 발생한 모든 예외를 RuntimeException으로 감싸서 처리합니다.
+            throw new RuntimeException("S3 삭제 실패: " + e.getMessage());
         }
     }
 }
