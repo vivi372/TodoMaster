@@ -1,6 +1,7 @@
 package com.todoMaster.user.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -50,5 +51,13 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo() {
         return ResponseEntity.ok(userService.getMyInfo());
+    }   
+    
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteMyAccount() {     
+
+        userService.deleteUser();
+
+        return ResponseEntity.ok().body("회원 탈퇴 완료");
     }
 }

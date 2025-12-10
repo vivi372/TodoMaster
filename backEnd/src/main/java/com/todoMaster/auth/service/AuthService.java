@@ -183,6 +183,25 @@ public class AuthService {
 
         return tempPassword;
     }
+    
+    /**
+     * 
+     * @param userId
+     * @param rawPassword
+     */
+    public void checkPassword(Long userId, String rawPassword) {
+
+        UserInfoVO user = userMapper.findById(userId);
+
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // BCrypt 기반 비교
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new CustomException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
+    }
 
     /**
      * Access token에서 userId 얻는 유틸(컨트롤러에서 직접 쓰기 편리하도록)

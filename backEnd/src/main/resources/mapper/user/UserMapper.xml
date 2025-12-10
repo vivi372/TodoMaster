@@ -80,5 +80,11 @@
 		UPDATED_AT = SYSDATE
 		WHERE USER_ID = #{userId}
 	</update>
+	
+	<!-- 회원 탈퇴 -->
+	<delete id="deleteUser">
+		DELETE FROM USER_INFO
+		WHERE USER_ID = #{userId}
+	</delete>
 
 </mapper>

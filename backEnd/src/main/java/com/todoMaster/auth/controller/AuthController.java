@@ -2,6 +2,7 @@ package com.todoMaster.auth.controller;
 
 import com.todoMaster.auth.dto.LoginRequest;
 import com.todoMaster.auth.dto.LoginResponse;
+import com.todoMaster.auth.dto.PasswordCheckRequest;
 import com.todoMaster.auth.dto.UserSignupRequest;
 import com.todoMaster.auth.service.AuthService;
 
@@ -121,6 +122,28 @@ public class AuthController {
     public ResponseEntity<String > resetPassword(String email) {
         String tempPassword = authService.resetPassword(email);
         return ResponseEntity.ok(tempPassword);
+    }
+    
+    /**
+     * 비밀번호 검증 api
+     * @param request
+     * @return
+     */
+    @PostMapping("/check-password")
+    public ResponseEntity<?> checkPassword(
+    		@RequestHeader(name = "Authorization", required = false) String authHeader,
+    		@Valid @RequestBody PasswordCheckRequest request) {
+    	
+    	// 헤더 인증부에 있는 토큰을 통해 userId 가져오기
+    	if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Invalid Authorization header");
+        }
+        String access = authHeader.substring(7);
+        Long userId = authService.getUserIdFromAccessToken(access);
+
+        authService.checkPassword(userId, request.getPassword());
+
+        return ResponseEntity.ok("비밀번호 확인 완료");
     }
 
 }

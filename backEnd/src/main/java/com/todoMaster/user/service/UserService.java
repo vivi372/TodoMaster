@@ -116,6 +116,43 @@ public class UserService {
                 .provider(user.getProvider())
                 .build();
     }
+    
+    /**
+     * 회원 삭제
+     * @param userId 삭제할 회원 아이디
+     */
+    @Transactional
+    public void deleteUser() {
+    	
+    	Long userId = getCurrentUserId();
+
+        UserInfoVO user = userMapper.findById(userId);
+
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        String profileImg = user.getProfileImg();
+
+        try {
+            // 1) 유저 데이터 삭제
+            int result = userMapper.deleteUser(userId);
+
+            if (result == 0) {
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+
+            // 2) 기존 프로필 이미지가 있다면 S3에서 삭제
+            if (profileImg != null) {
+                s3Uploader.delete(profileImg);
+            }
+
+        } catch (Exception e) {
+            // 🔥 실패하면 S3 이미 삭제되었을 수도 있으므로
+            // 여기서는 S3 롤백은 하지 않음(삭제는 롤백 불가능), DB만 롤백됨.
+            throw e;
+        }
+    }
 
     /**
      * SecurityContext에서 현재 인증된 사용자 ID를 꺼낸다.
