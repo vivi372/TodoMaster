@@ -1,9 +1,10 @@
 package com.todoMaster.auth.controller;
 
-import com.todoMaster.auth.dto.LoginRequest;
-import com.todoMaster.auth.dto.LoginResponse;
-import com.todoMaster.auth.dto.PasswordCheckRequest;
-import com.todoMaster.auth.dto.UserSignupRequest;
+import com.todoMaster.auth.dto.request.LoginRequest;
+import com.todoMaster.auth.dto.request.PasswordCheckRequest;
+import com.todoMaster.auth.dto.request.SocialSignupRequest;
+import com.todoMaster.auth.dto.request.UserSignupRequest;
+import com.todoMaster.auth.dto.response.LoginResponse;
 import com.todoMaster.auth.service.AuthService;
 import com.todoMaster.global.dto.ApiResponse;
 
@@ -28,6 +29,15 @@ public class AuthController {
     public ResponseEntity<?> signup(@RequestBody @Valid UserSignupRequest req) {
     	authService.signup(req);
         return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
+    }
+    
+    // -------- 소셜 회원가입 --------
+    @PostMapping("/social/signup")
+    public ResponseEntity<?> socialSignup(
+            @Valid @RequestBody SocialSignupRequest req
+    ) {
+        Long userId = authService.socialSignup(req.getProvider(), req.getCode());
+        return ResponseEntity.ok(ApiResponse.success("소셜 회원가입 성공", userId));
     }
 
     /**

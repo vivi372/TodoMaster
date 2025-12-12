@@ -1,4 +1,4 @@
-package com.todoMaster.auth.dto;
+package com.todoMaster.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

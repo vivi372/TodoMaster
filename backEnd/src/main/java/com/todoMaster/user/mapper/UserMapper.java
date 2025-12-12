@@ -11,6 +11,9 @@ public interface UserMapper {
 	
 	// 이메일 중복 체크
     int countByEmail(String email);
+    
+    // provider + providerId 로 기존 회원 조회
+    UserInfoVO findByProvider(@Param("provider") String provider,@Param("providerId") String providerId);
 
     // 회원가입
     int insertUser(UserInfoVO vo);

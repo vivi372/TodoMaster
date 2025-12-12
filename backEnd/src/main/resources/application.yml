@@ -40,3 +40,16 @@ aws:
   credentials:
     accessKey: ${AWS_ACCESS_KEY}
     secretKey: ${AWS_SECRET_KEY}
+
+oauth:
+  # 카카오 소셜 로그인
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: http://localhost:5173/auth/kakao/callback
+  # 구글 소셜 로그인
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: http://localhost:5173/auth/google/callback
+  

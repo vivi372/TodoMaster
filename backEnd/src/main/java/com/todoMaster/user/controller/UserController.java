@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.todoMaster.auth.dto.LoginResponse;
+import com.todoMaster.auth.dto.response.LoginResponse;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.global.dto.ApiResponse;
 import com.todoMaster.user.dto.ChangePasswordRequest;

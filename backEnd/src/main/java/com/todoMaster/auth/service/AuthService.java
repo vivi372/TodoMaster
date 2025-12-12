@@ -1,7 +1,8 @@
 package com.todoMaster.auth.service;
 
-import com.todoMaster.auth.dto.LoginRequest;
-import com.todoMaster.auth.dto.UserSignupRequest;
+import com.todoMaster.auth.dto.SocialUserInfo;
+import com.todoMaster.auth.dto.request.LoginRequest;
+import com.todoMaster.auth.dto.request.UserSignupRequest;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.auth.util.TokenHashUtil;
 import com.todoMaster.global.exception.CustomException;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 인증 관련 비즈니스 로직 담당
@@ -34,6 +36,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final TokenHashUtil tokenHashUtil;
     private final S3Uploader s3Uploader;
+    private final SocialOAuthProcessor socialOAuthProcessor;
     
     public void signup(UserSignupRequest req) {
 
@@ -68,6 +71,35 @@ public class AuthService {
 
             throw e; // 원래 예외 다시 던짐
         }
+    }
+    
+    // -------- 소셜 회원가입 --------
+    @Transactional
+    public Long socialSignup(String provider, String code) {
+
+        SocialUserInfo socialUser = socialOAuthProcessor.getUserFromProvider(provider, code);
+
+        if (userMapper.countByEmail(socialUser.getEmail()) > 0) {
+            throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
+        }
+
+        UserInfoVO vo = new UserInfoVO();
+        vo.setEmail(socialUser.getEmail());
+        vo.setNickname(socialUser.getNickname());
+        vo.setProvider(socialUser.getProvider());
+        vo.setProviderId(socialUser.getProviderId());
+        vo.setProfileImg(socialUser.getProfileImage());
+
+        int result = userMapper.insertUser(vo);
+
+        if (result == 0) {
+            if (socialUser.getProfileImage() != null) {
+                s3Uploader.delete(socialUser.getProfileImage());
+            }
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        return vo.getUserId();
     }
 
     /**
