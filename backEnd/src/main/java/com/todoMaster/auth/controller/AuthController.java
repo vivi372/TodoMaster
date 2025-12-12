@@ -2,9 +2,11 @@ package com.todoMaster.auth.controller;
 
 import com.todoMaster.auth.dto.request.LoginRequest;
 import com.todoMaster.auth.dto.request.PasswordCheckRequest;
+import com.todoMaster.auth.dto.request.SocialLoginRequest;
 import com.todoMaster.auth.dto.request.SocialSignupRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
 import com.todoMaster.auth.dto.response.LoginResponse;
+import com.todoMaster.auth.dto.response.SocialLoginResponse;
 import com.todoMaster.auth.service.AuthService;
 import com.todoMaster.global.dto.ApiResponse;
 
@@ -66,6 +68,35 @@ public class AuthController {
         ApiResponse<LoginResponse> response = ApiResponse.success(
         		"로그인 성공"
         		, new LoginResponse(access)
+        );
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(response);
+    }
+    
+    
+    @PostMapping("/social/login")
+    public ResponseEntity<?> socialLogin(@Valid @RequestBody SocialLoginRequest req) {
+
+        String combined = authService.socialLogin(req.getProvider(), req.getCode());
+        String[] parts = combined.split("::", 2);
+
+        String access = parts[0];
+        String refresh = parts[1];
+
+        // RefreshToken → HttpOnly Cookie
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
+                .httpOnly(true)
+                .secure(false) // 운영환경에서는 true
+                .path("/api/auth/refresh")
+                .maxAge(14 * 24 * 60 * 60)
+                .sameSite("Lax")
+                .build();
+
+        ApiResponse<SocialLoginResponse> response = ApiResponse.success(
+                "소셜 로그인 성공",
+                new SocialLoginResponse(access)
         );
 
         return ResponseEntity.ok()

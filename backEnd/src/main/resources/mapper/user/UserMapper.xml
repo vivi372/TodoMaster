@@ -21,13 +21,17 @@
 
 	<!-- 회원 삽입 (USER_ID는 SEQ로 처리) -->
     <insert id="insertUser" parameterType="com.todoMaster.user.vo.UserInfoVO">
+		<selectKey keyProperty="userId" resultType="int" order="BEFORE">
+		    SELECT SEQ_USER_ID.NEXTVAL FROM DUAL
+		</selectKey>
+		
         INSERT INTO USER_INFO (
             USER_ID, EMAIL, PASSWORD, NICKNAME,
             PROFILE_IMG, PROVIDER, PROVIDER_ID,
             SALT ,REFRESH_TOKEN, CREATED_AT
         )
         VALUES (
-            SEQ_USER_ID.NEXTVAL,
+            #{userId},
             #{email},
             #{password},
             #{nickname},

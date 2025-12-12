@@ -26,7 +26,7 @@ public class SocialOAuthProcessor {
     // Kakao 소셜 로그인 API와 통신하는 클라이언트 객체 주입
     private final KakaoOAuthClient kakaoClient;
     // Google 소셜 로그인 API와 통신하는 클라이언트 객체 주입
-    private final GoogleOAuthClient googleOAuthClient;
+    private final GoogleOAuthClient googleClient;
 
     /**
      * 특정 소셜 제공자(Provider)로부터 인가 코드를 사용하여 사용자 정보를 획득합니다.
@@ -43,27 +43,9 @@ public class SocialOAuthProcessor {
 		return switch (provider.toLowerCase()) {
 
 		// 1. 카카오 로그인 처리
-		case "kakao" -> {
-			// 1-1. 인가 코드(code)를 사용하여 Access Token을 발급받습니다.
-			KakaoTokenResponse token = kakaoClient.getToken(code);
-
-			// 1-2. 발급받은 Access Token으로 카카오 서버에서 사용자 상세 정보를 조회합니다.
-			KakaoUserResponse user = kakaoClient.getUserInfo(token.getAccessToken());
-
-			// 1-3. 카카오 응답 DTO를 애플리케이션의 통합 DTO인 SocialUserInfo로 변환하여 반환합니다.
-			yield SocialUserInfo.fromKakao(user);
-		}
+		case "kakao" -> kakaoClient.getUserInfoByCode(code);
 		// 1. 카카오 로그인 처리
-		case "google" -> {
-			// 1-1. 인가 코드(code)를 사용하여 Access Token을 발급받습니다.
-			GoogleTokenResponse token = googleOAuthClient.getToken(code);
-
-			// 1-2. 발급받은 Access Token으로 카카오 서버에서 사용자 상세 정보를 조회합니다.
-			GoogleUserResponse user = googleOAuthClient.getUserInfo(token.getAccessToken());
-
-			// 1-3. 카카오 응답 DTO를 애플리케이션의 통합 DTO인 SocialUserInfo로 변환하여 반환합니다.
-			yield SocialUserInfo.fromGoogle(user);
-		}
+		case "google" -> googleClient.getUserInfoByCode(code);
 
 		// 지원하지 않는 provider가 들어온 경우 예외 처리
 		default -> throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);

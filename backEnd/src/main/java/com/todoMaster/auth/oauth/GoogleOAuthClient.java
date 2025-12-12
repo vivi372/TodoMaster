@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.response.GoogleTokenResponse;
 import com.todoMaster.auth.dto.response.GoogleUserResponse;
 
@@ -31,16 +32,16 @@ public class GoogleOAuthClient {
     private String redirectUri;
 
     /**
-     * 인가코드(code) → access_token 교환
+     * 인가코드(code) → access_token → 사용자 정보 조회
      * Google의 토큰 엔드포인트에 인가 코드와 Client Secret을 전송하여 Access Token을 발급받습니다.
-     *
+     * 그 후 발급받은 Access Token을 사용하여 Google 사용자 정보 엔드포인트에 접근합니다.
      * @param code 클라이언트로부터 전달받은 인가 코드 (Authorization Code)
-     * @return GoogleTokenResponse DTO (Access Token 정보를 담고 있음)
+     * @return SocialUserInfo (Google 사용자 상세 정보)
      */
-    public GoogleTokenResponse getToken(String code) {
+    public SocialUserInfo getUserInfoByCode(String code) {
 
-        // 1. HTTP POST 요청 구성
-        return webClient.post()
+        // 1) 인증코드 → AccessToken 교환
+    	GoogleTokenResponse token = webClient.post()
                 .uri("https://oauth2.googleapis.com/token") // Google 토큰 발급 API URL
                 .headers(headers ->
                         // Content-Type을 x-www-form-urlencoded로 명시 (Google API 요구 사항)
@@ -57,24 +58,18 @@ public class GoogleOAuthClient {
                 .retrieve()
                 .bodyToMono(GoogleTokenResponse.class) // 응답을 DTO로 변환
                 .block(); // 블로킹 방식으로 실행하고 결과를 즉시 반환
-    }
-
-    /**
-     * access_token → 사용자 정보 조회
-     * 발급받은 Access Token을 사용하여 Google 사용자 정보 엔드포인트에 접근합니다.
-     *
-     * @param accessToken Google로부터 발급받은 Access Token
-     * @return GoogleUserResponse DTO (Google 사용자 상세 정보)
-     */
-    public GoogleUserResponse getUserInfo(String accessToken) {
-
-        // 1. HTTP GET 요청 구성
-        return webClient.get()
+    	
+    	// 2) AccessToken → UserInfo 조회
+    	GoogleUserResponse user = webClient.get()
                 .uri("https://www.googleapis.com/oauth2/v3/userinfo") // Google 사용자 정보 조회 API URL
                 // 2. Authorization 헤더에 Bearer 토큰을 설정
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", "Bearer " + token.getAccessToken())
                 .retrieve()
                 .bodyToMono(GoogleUserResponse.class) // 응답을 DTO로 변환
                 .block(); // 블로킹 방식으로 실행하고 결과를 즉시 반환
+    	
+    	// 3) 내 서비스에서 사용하는 표준 DTO로 변환
+        return SocialUserInfo.fromGoogle(user);
     }
+    
 }

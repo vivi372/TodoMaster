@@ -92,10 +92,7 @@ public class AuthService {
 
         int result = userMapper.insertUser(vo);
 
-        if (result == 0) {
-            if (socialUser.getProfileImage() != null) {
-                s3Uploader.delete(socialUser.getProfileImage());
-            }
+        if (result == 0) {            
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
@@ -142,6 +139,57 @@ public class AuthService {
 
         return access + "::" + refresh;
     }
+    
+    @Transactional
+    public String socialLogin(String provider, String code) {
+
+        // 1) provider로부터 사용자 정보 가져오기
+        SocialUserInfo userInfo = socialOAuthProcessor.getUserFromProvider(provider, code);
+
+        // 2) 이미 가입했는지 체크
+        UserInfoVO existing = userMapper.findByProvider(provider, userInfo.getProviderId());
+
+        Long userId;
+
+        if (existing == null) {
+            // ------- 새 사용자 자동가입  -------
+            UserInfoVO vo = new UserInfoVO();
+            vo.setEmail(userInfo.getEmail());
+            vo.setNickname(userInfo.getNickname());
+            vo.setProvider(provider);
+            vo.setProviderId(userInfo.getProviderId());
+            vo.setProfileImg(userInfo.getProfileImage());
+
+            int result = userMapper.insertUser(vo);
+            userId = vo.getUserId();
+            
+            if (result == 0) {                
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+            
+        } else {
+            userId = existing.getUserId();
+        }
+
+        // 3) Access / Refresh Token 생성
+        String access = jwtProvider.createAccessToken(userId,userInfo.getEmail());
+        String refresh = jwtProvider.createRefreshToken(userId);
+
+        // DB에 RefreshToken 등록
+        // 1. 솔트 생성
+        String salt = tokenHashUtil.generateSalt();
+        
+        // 2. 토큰 해싱
+        String hashedToken = tokenHashUtil.hashToken(refresh, salt);
+        
+        // 3. DB에 저장
+        userMapper.updateRefreshToken(userId, refresh, salt);
+
+        // return은 기존 login()처럼  
+        // "access::refresh" 형식 유지해서 컨트롤러에서 쿠키 처리 동일하게 하도록 한다.
+        return access + "::" + refresh;
+    }
+
 
     /**
      * refresh 토큰으로 access 재발급 및 refresh 회전

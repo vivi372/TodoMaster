@@ -1,5 +1,6 @@
 package com.todoMaster.auth.oauth;
 
+import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.response.KakaoTokenResponse;
 import com.todoMaster.auth.dto.response.KakaoUserResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +31,15 @@ public class KakaoOAuthClient {
     private final WebClient webClient = WebClient.builder().build(); 
     // 참고: WebClient를 Bean으로 등록하고 주입받아 사용하는 것이 더 일반적입니다.
 
-    /** * 인가코드(code) → access_token 발급
+    /** * 인가코드(code) → access_token → 사용자 정보 조회
      * Kakao 토큰 엔드포인트에 인가 코드를 전송하여 Access Token을 발급받습니다.
+     * 그 후 발급받은 Access Token을 사용하여 카카오 사용자 정보 엔드포인트에 접근합니다.
      * * @param code 클라이언트로부터 전달받은 인가 코드 (Authorization Code)
-     * @return KakaoTokenResponse DTO (Access Token 정보를 담고 있음)
+     * @return SocialUserInfo (카카오 사용자 상세 정보)
      */
-    public KakaoTokenResponse getToken(String code) {
-        return webClient.post()
+    public SocialUserInfo getUserInfoByCode(String code) {
+    	 // 1) 인증코드 → AccessToken 교환
+    	KakaoTokenResponse token = webClient.post()
                 // 1. 토큰 발급 요청 URI 구성 (https://kauth.kakao.com/oauth/token)
         		.uri("https://kauth.kakao.com/oauth/token")
         		.headers(headers -> {
@@ -52,20 +55,17 @@ public class KakaoOAuthClient {
                 .retrieve() // 응답 본문 추출을 시작
                 .bodyToMono(KakaoTokenResponse.class) // 응답 본문을 Mono<KakaoTokenResponse>로 변환
                 .block(); // 블로킹 방식으로 실행하고 결과를 즉시 반환 (주의: 논블로킹 환경에서는 권장되지 않음)
-    }
-
-    /** * access_token → 사용자 정보 조회
-     * 발급받은 Access Token을 사용하여 카카오 사용자 정보 엔드포인트에 접근합니다.
-     * * @param accessToken 카카오로부터 발급받은 Access Token
-     * @return KakaoUserResponse DTO (카카오 사용자 상세 정보)
-     */
-    public KakaoUserResponse getUserInfo(String accessToken) {
-        return webClient.get()
+        
+    	// 2) AccessToken → UserInfo 조회
+    	 KakaoUserResponse user = webClient.get()
                 .uri("https://kapi.kakao.com/v2/user/me") // 카카오 사용자 정보 조회 API URL
                 // Authorization 헤더에 Bearer 토큰을 설정합니다.
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", "Bearer " + token.getAccessToken())
                 .retrieve() // 응답 본문 추출을 시작
                 .bodyToMono(KakaoUserResponse.class) // 응답 본문을 Mono<KakaoUserResponse>로 변환
                 .block(); // 블로킹 방식으로 실행하고 결과를 즉시 반환
-    }
+    	 
+    	 // 3) 내 서비스에서 사용하는 표준 DTO로 변환
+         return SocialUserInfo.fromKakao(user);
+    }	
 }
