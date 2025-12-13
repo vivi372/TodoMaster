@@ -1,5 +1,11 @@
+import { ToastContainer } from './shared/ui/ToastContainer';
+
 function App() {
-  return <></>;
+  return (
+    <>
+      <ToastContainer />
+    </>
+  );
 }
 
 export default App;

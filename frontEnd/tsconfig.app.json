@@ -22,7 +22,12 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"] // @/로 시작하는 모든 경로는 ./src/* 에서 찾도록 설정
+    }
   },
   "include": ["src"]
 }
