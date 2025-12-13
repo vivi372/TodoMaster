@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -24,5 +25,11 @@ export default defineConfig({
   ],
   build: {
     sourcemap: true, // Sentry에 필요
+  },
+  resolve: {
+    alias: {
+      // path.resolve()를 사용하여 @를 프로젝트 루트의 /src 폴더로 매핑합니다.
+      '@': path.resolve(__dirname, './src'),
+    },
   },
 });
