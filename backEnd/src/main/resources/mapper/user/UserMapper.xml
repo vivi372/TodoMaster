@@ -12,7 +12,7 @@
     </select>
 
 	<!-- provider + providerId 로 기존 회원 조회 -->
-	<select id="findByProvider" resultType="com.todoMaster.domain.UserInfoVO">
+	<select id="findByProvider" resultType="com.todoMaster.user.vo.UserInfoVO">
 		SELECT *
 		FROM USER_INFO
 		WHERE PROVIDER = #{provider}

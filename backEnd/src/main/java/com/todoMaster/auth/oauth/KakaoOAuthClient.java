@@ -28,7 +28,7 @@ public class KakaoOAuthClient {
     private String redirectUri;
     
     // WebClient 인스턴스 (HTTP 통신을 위한 비동기 클라이언트)
-    private final WebClient webClient = WebClient.builder().build(); 
+    private final WebClient webClient;
     // 참고: WebClient를 Bean으로 등록하고 주입받아 사용하는 것이 더 일반적입니다.
 
     /** * 인가코드(code) → access_token → 사용자 정보 조회
