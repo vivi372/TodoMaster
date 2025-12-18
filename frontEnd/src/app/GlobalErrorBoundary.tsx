@@ -1,6 +1,5 @@
 ﻿import { Component, type ReactNode } from 'react';
-// 전역 토스트 알림을 관리하는 Zustand 스토어를 가져옵니다.
-import { useToastStore } from '@/shared/store/toastStore';
+import { appToast } from '@/shared/utils/appToast';
 
 /**
  * 컴포넌트가 받을 Props의 타입을 정의합니다.
@@ -42,12 +41,11 @@ export class GlobalErrorBoundary extends Component<Props, State> {
    * @param error 발생한 오류 객체
    */
   componentDidCatch(error: Error) {
-    // React Query 설정에서와 마찬가지로, 컴포넌트 바깥에서 Zustand 상태에 접근하여 토스트를 띄웁니다.
-    useToastStore.getState().show(
+    // toast를 이용해 사용자에게 오류 출력
+    appToast.error({
       // 오류 메시지가 있으면 사용하고, 없으면 기본 메시지를 표시합니다.
-      error.message || '화면 오류가 발생했습니다.',
-      'error', // 오류 유형으로 알림
-    );
+      message: error.message || '화면 오류가 발생했습니다.',
+    });
 
     // NOTE: 실제 프로덕션 환경에서는 이 위치에서 Sentry나 LogRocket 같은 오류 로깅 서비스로 오류를 전송합니다.
   }

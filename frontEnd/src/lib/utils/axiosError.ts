@@ -1,4 +1,4 @@
-﻿import { AxiosError } from 'axios';
+﻿import axios from 'axios';
 
 /**
  * 발생한 오류(error) 객체에서 사용자에게 보여줄 적절한 오류 메시지를 추출합니다.
@@ -9,7 +9,7 @@
  */
 export const getAxiosErrorMessage = (error: unknown): string => {
   // 1. 오류 객체가 AxiosError 인스턴스인지 확인합니다.
-  if (error instanceof AxiosError) {
+  if (axios.isAxiosError(error)) {
     return (
       // 2. 서버 응답 본문(response.data)에서 가장 구체적인 메시지를 순서대로 시도합니다.
       //    a. 서버가 커스텀 메시지를 담아 보낸 경우 (e.g., Spring Boot의 API Response DTO)

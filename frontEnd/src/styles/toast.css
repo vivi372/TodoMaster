@@ -1,0 +1,16 @@
+﻿/* src/app/styles/toast.css */
+
+@media (max-width: 768px) {
+  [data-sonner-toaster] {
+    top: auto !important;
+    bottom: 1rem !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: calc(100% - 2rem);
+  }
+
+  [data-sonner-toast] {
+    border-radius: 12px;
+  }
+}
