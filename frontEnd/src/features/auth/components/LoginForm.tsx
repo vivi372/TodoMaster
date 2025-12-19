@@ -50,13 +50,13 @@ export function LoginForm() {
   }, [errors, isSubmitted]);
 
   // 폼 제출 시 실행되는 비동기 함수
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = (values: LoginFormValues) => {
     // 폼 유효성 검사가 성공하면, 'values' 객체에 폼 데이터가 담겨 전달됩니다.
     console.log(values);
 
-    await login(values);
+    login(values);
     // 로그인 성공 후 '/todos' 경로로 이동 (replace: true는 뒤로 가기 기록에서 현재 페이지를 대체)
-    navigate('/todos', { replace: true });
+    //navigate('/todos', { replace: true });
   };
 
   return (

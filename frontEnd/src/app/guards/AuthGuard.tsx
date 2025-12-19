@@ -1,13 +1,18 @@
 ﻿import { Navigate } from 'react-router-dom';
 import { authStore } from '@/features/auth/store/authStore';
+import { LoadingDots } from '@/shared/ui/loading/LoadingDotsProps';
 
 /**
  * AuthGuard 컴포넌트: 인증이 필요한 라우트를 보호하는 역할을 합니다.
  * React Router의 <Route element={<AuthGuard />} /> 형태로 사용됩니다.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  // useAuthStore 훅을 사용하여 스토어에서 isAuthenticated 상태만 가져옵니다.
-  const isAuthenticated = authStore((s) => s.isAuthenticated);
+  // useAuthStore 훅을 사용하여 스토어에서 isAuthenticated, isAuthInitialized 상태만 가져옵니다.
+  const { isAuthenticated, isAuthInitialized } = authStore();
+
+  if (!isAuthInitialized) {
+    return <LoadingDots />; // 또는 로딩 스켈레톤
+  }
 
   /**
    * 1. 인증되지 않은 경우 (가드 역할)

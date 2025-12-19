@@ -1,7 +1,6 @@
 ﻿import { useMutation } from '@tanstack/react-query';
 import { authStore } from '../store/authStore';
 import { authApi } from '../api/authApi';
-import { appToast } from '@/shared/utils/appToast';
 
 /**
  * useAuth 커스텀 훅:
@@ -22,11 +21,6 @@ export const useAuth = () => {
       // 서버 응답 데이터(data.accessToken)를 Zustand 스토어에 저장하여 전역 상태를 업데이트합니다.
       setAccessToken(data.accessToken);
     },
-    onError: (error) => {
-      appToast.error({
-        message: error instanceof Error ? error.message : '로그인에 실패했습니다.',
-      });
-    },
   });
 
   // 3. 소셜 로그인 Mutation 정의
@@ -44,7 +38,7 @@ export const useAuth = () => {
   // 4. 컴포넌트에서 사용할 기능과 상태를 반환합니다.
   return {
     // mutateAsync 함수를 login이라는 이름으로 반환하여 컴포넌트에서 쉽게 호출할 수 있게 합니다.
-    login: loginMutation.mutateAsync,
+    login: loginMutation.mutate,
 
     // 소셜 로그인 mutateAsync 함수를 반환합니다.
     socialLogin: socialLoginMutation.mutateAsync,

@@ -1,5 +1,4 @@
 ﻿import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { getAxiosErrorMessage } from '../utils/axiosError';
 import { authStore } from '@/features/auth/store/authStore';
 
 /**
@@ -110,14 +109,6 @@ api.interceptors.response.use(
       }
     }
 
-    // 401이 아니거나, 이미 재시도했던 요청이라면 오류를 그대로 반환합니다.
-    // a. 오류 메시지 추출: 유틸리티 함수를 사용하여 AxiosError 객체에서
-    //    서버 메시지(data.message)나 표준 오류 메시지를 추출합니다.
-    const msg = getAxiosErrorMessage(error);
-
-    // b. Promise.reject 반환: 추출된 메시지를 담은 새로운 Error 객체를 생성하여
-    //    호출자(컴포넌트/서비스)에게 오류를 발생시킵니다.
-    //    이렇게 하면 호출자는 .catch 블록에서 정제된 오류 메시지를 받게 됩니다.
-    return Promise.reject(new Error(msg));
+    return Promise.reject(error);
   },
 );

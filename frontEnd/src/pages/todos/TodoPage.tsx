@@ -8,9 +8,10 @@ export default function TodoPage() {
   const navigate = useNavigate();
 
   async function logout() {
-    authStore.getState().logout();
+    console.log('로그아웃');
     await authApi.logout();
-    navigate('/login');
+    authStore.getState().logout();
+    //navigate('/login');
   }
 
   return (

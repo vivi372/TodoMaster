@@ -5,6 +5,7 @@ import { authStore } from './features/auth/store/authStore';
 import AppRoutes from './app/Routes';
 import { BrowserRouter } from 'react-router-dom';
 import './styles/globals.css';
+import { ModalProvider } from './shared/ui/ModalProvider';
 
 function App() {
   useEffect(() => {
@@ -15,13 +16,17 @@ function App() {
       })
       .catch(() => {
         authStore.getState().logout();
+      })
+      .finally(() => {
+        authStore.getState().setAuthInitialized();
       });
   }, []);
 
   return (
     <>
-      <ToastProvider />
       <BrowserRouter>
+        <ModalProvider />
+        <ToastProvider />
         <AppRoutes />
       </BrowserRouter>
     </>

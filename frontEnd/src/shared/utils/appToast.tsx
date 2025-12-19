@@ -49,7 +49,7 @@ export const appToast = {
     dedup(message, () =>
       sonnerToast.success(message, {
         description,
-        icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+        icon: <CheckCircle2 className="h-5 w-5" />,
         className: 'border-l-4 border-l-green-500',
       }),
     );
@@ -63,7 +63,7 @@ export const appToast = {
     dedup(message, () =>
       sonnerToast.info(message, {
         description,
-        icon: <Info className="h-5 w-5 text-blue-500" />,
+        icon: <Info className="h-5 w-5" />,
         className: 'border-l-4 border-l-blue-500',
       }),
     );
@@ -77,8 +77,8 @@ export const appToast = {
     dedup(message, () =>
       sonnerToast.warning(message, {
         description,
-        icon: <AlertTriangle className="h-5 w-5 text-yellow-500" />,
-        className: 'border-l-4 border-l-yellow-500',
+        icon: <AlertTriangle className="h-5 w-5" />,
+        className: 'border-l-4 border-l-orange-500',
       }),
     );
   },
@@ -91,7 +91,7 @@ export const appToast = {
     dedup(message, () =>
       sonnerToast.error(message, {
         description,
-        icon: <XCircle className="h-5 w-5 text-red-500" />,
+        icon: <XCircle className="h-5 w-5" />,
         className: 'border-l-4 border-l-red-500',
       }),
     );

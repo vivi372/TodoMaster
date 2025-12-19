@@ -1,8 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import * as Sentry from '@sentry/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { GlobalErrorBoundary } from './app/GlobalErrorBoundary.tsx';
+import { queryClient } from './app/queryClient.ts';
 
 // PRODUCTION 환경 + DSN 존재할 때만 초기화
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -15,9 +16,6 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     environment: 'production',
   });
 }
-
-// react-query 설정
-const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <GlobalErrorBoundary>
