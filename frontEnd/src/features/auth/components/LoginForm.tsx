@@ -12,6 +12,22 @@ import KakaoIcon from '@/shared/ui/KakaoIcon';
 import { loginSchema, type LoginFormValues } from '../schema/loginSchema';
 import { useAuth } from '../hooks/useAuth';
 import { appToast } from '@/shared/utils/appToast';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, // 0.1초 간격으로 자식 요소 순차 애니메이션
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 }, // 숨겨진 상태: 투명도 0, Y축 20px 아래
+  show: { opacity: 1, y: 0 }, // 보이는 상태: 투명도 1, Y축 0 (원위치)
+};
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -76,8 +92,17 @@ export function LoginForm() {
     `&state=google`;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-      <div className="space-y-2">
+    <motion.form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-5"
+      noValidate
+      // 🟢 최상위 컨테이너 Variants 적용
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      {/* 1. 이메일 필드 블록 */}
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="email" className="text-sm font-medium">
           이메일
         </Label>
@@ -90,9 +115,10 @@ export function LoginForm() {
             {...register('email')}
           />
         </div>
-      </div>
+      </motion.div>
 
-      <div className="space-y-2">
+      {/* 2. 비밀번호 필드 블록 */}
+      <motion.div className="space-y-2" variants={itemVariants}>
         <Label htmlFor="password" className="text-sm font-medium">
           비밀번호
         </Label>
@@ -113,11 +139,12 @@ export function LoginForm() {
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex items-center justify-between">
+      {/* 3. 로그인 유지 / 비밀번호 찾기 블록 */}
+      <motion.div className="flex items-center justify-between" variants={itemVariants}>
         <div className="flex items-center gap-2">
-          {/* 외부 UI 컴포넌트 제어를 위해 Controller 사용 */}
+          {/* Checkbox Controller는 그대로 유지 */}
           <Controller
             name="rememberMe"
             control={control}
@@ -126,10 +153,10 @@ export function LoginForm() {
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 className="
-                    border-muted-foreground
-                    data-[state=checked]:bg-primary
-                    data-[state=checked]:border-primary
-                  "
+                border-muted-foreground
+                data-[state=checked]:bg-primary
+                data-[state=checked]:border-primary
+              "
               />
             )}
           />
@@ -143,26 +170,32 @@ export function LoginForm() {
         >
           비밀번호 찾기
         </Link>
-      </div>
+      </motion.div>
 
-      <Button
-        type="submit"
-        className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
-        disabled={isLoading}
-      >
-        {isLoading ? '로그인 중...' : '로그인'}
-      </Button>
+      {/* 4. 로그인 버튼 블록 */}
+      <motion.div variants={itemVariants}>
+        <Button
+          type="submit"
+          className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+          disabled={isLoading}
+        >
+          {isLoading ? '로그인 중...' : '로그인'}
+        </Button>
+      </motion.div>
 
-      <div className="relative my-6">
+      {/* 5. 구분선 (또는) 블록 */}
+      <motion.div className="relative my-6" variants={itemVariants}>
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
           <span className="px-4 bg-background text-muted-foreground">또는</span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* 6. 소셜 로그인 버튼 블록 */}
+      <motion.div className="grid grid-cols-2 gap-3" variants={itemVariants}>
+        {/* ... Google 버튼 ... */}
         <Button
           type="button"
           variant="outline"
@@ -173,26 +206,26 @@ export function LoginForm() {
           <span className="hidden sm:inline">Google로 로그인</span>
           <span className="sm:hidden">Google</span>
         </Button>
+        {/* ... Kakao 버튼 ... */}
         <Button
           type="button"
-          // 기본 variant는 'default'로 두고, 커스텀 클래스로 색상을 완벽히 덮어씌웁니다.
-          variant="default" // variant는 유지하되, 아래 className으로 오버라이드
+          variant="default"
           className="h-12 !bg-kakao-yellow hover:!bg-[#FEE500]/90 text-black shadow-sm border border-transparent"
           onClick={() => navigate(KAKAO_AUTH_URL)}
         >
-          {/* 🌟 카카오 아이콘 (필수: 검은색, 텍스트와 분리) */}
           <KakaoIcon size={20} className="w-5 h-5 mr-2" />
           <span className="hidden sm:inline">카카오로 로그인</span>
           <span className="sm:hidden">카카오</span>
         </Button>
-      </div>
+      </motion.div>
 
-      <p className="text-center text-sm text-muted-foreground mt-6">
+      {/* 7. 회원가입 링크 블록 */}
+      <motion.p className="text-center text-sm text-muted-foreground mt-6" variants={itemVariants}>
         계정이 없으신가요?{' '}
         <Link to="/signup" className="text-foreground font-semibold hover:underline">
           회원가입
         </Link>
-      </p>
-    </form>
+      </motion.p>
+    </motion.form>
   );
 }

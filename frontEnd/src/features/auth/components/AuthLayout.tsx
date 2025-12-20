@@ -3,16 +3,29 @@ import { CalendarDays, ListChecks, KanbanSquare, Zap } from 'lucide-react';
 import FeatureItem from './FeatureItem';
 import FeatureCard from './FeatureCard';
 import HaruLog from '@/shared/ui/HaruLog';
+import { motion, type Variants } from 'framer-motion';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle: string;
 }
+// Right Side 애니메이션 Variants 정의
+const formVariants: Variants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.5,
+      ease: 'easeInOut',
+    },
+  },
+};
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       {/* Left side - Branding (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 bg-primary/30 flex-col justify-between p-12 relative overflow-hidden">
         {/* Decorative elements */}
@@ -57,8 +70,14 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         </div>
       </div>
 
-      {/* Right side - Form */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12">
+      {/* Right side - Form (motion.div 적용) */}
+      <motion.div
+        className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12"
+        // 애니메이션 Variants 적용
+        variants={formVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
@@ -75,7 +94,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
 
           {children}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
