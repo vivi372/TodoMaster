@@ -7,6 +7,7 @@ import TodoPage from '@/pages/todos/TodoPage'; // Todo 목록 페이지 컴포�
 import { authStore } from '@/features/auth/store/authStore';
 import { GuestGuard } from './guards/GuestGuard';
 import { AuthGuard } from './guards/AuthGuard';
+import SocialRedirectPage from '@/pages/socialRedirect/SocialRedirectPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -49,6 +50,15 @@ const routes: RouteObject[] = [
       // GuestGuard: 이미 로그인 상태라면 이 페이지 대신 /todos로 리디렉션합니다.
       <GuestGuard>
         <SignupPage />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: '/auth/:provider/callback',
+    element: (
+      // GuestGuard: 이미 로그인 상태라면 이 페이지 대신 /todos로 리디렉션합니다.
+      <GuestGuard>
+        <SocialRedirectPage />
       </GuestGuard>
     ),
   },

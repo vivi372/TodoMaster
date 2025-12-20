@@ -4,6 +4,8 @@ import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.response.KakaoTokenResponse;
 import com.todoMaster.auth.dto.response.KakaoUserResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class KakaoOAuthClient {
 
     // application.yml/properties에서 주입받는 카카오 애플리케이션 정보
@@ -64,6 +67,8 @@ public class KakaoOAuthClient {
                 .retrieve() // 응답 본문 추출을 시작
                 .bodyToMono(KakaoUserResponse.class) // 응답 본문을 Mono<KakaoUserResponse>로 변환
                 .block(); // 블로킹 방식으로 실행하고 결과를 즉시 반환
+    	 
+    	 log.info("getUserInfoByCode:"+user.getKakaoAccount().getEmail());
     	 
     	 // 3) 내 서비스에서 사용하는 표준 DTO로 변환
          return SocialUserInfo.fromKakao(user);

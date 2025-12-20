@@ -183,7 +183,7 @@ public class AuthService {
         String hashedToken = tokenHashUtil.hashToken(refresh, salt);
         
         // 3. DB에 저장
-        userMapper.updateRefreshToken(userId, refresh, salt);
+        userMapper.updateRefreshToken(userId, hashedToken, salt);
 
         // return은 기존 login()처럼  
         // "access::refresh" 형식 유지해서 컨트롤러에서 쿠키 처리 동일하게 하도록 한다.

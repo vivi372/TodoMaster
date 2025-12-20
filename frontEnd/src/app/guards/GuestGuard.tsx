@@ -1,5 +1,6 @@
 ﻿import { Navigate } from 'react-router-dom'; // React Router v6에서 리디렉션에 사용되는 컴포넌트
 import { authStore } from '@/features/auth/store/authStore'; // 전역 인증 상태(Zustand 등)를 가져오는 훅
+import { LoadingDots } from '@/shared/ui/loading/LoadingDots';
 
 /**
  * GuestGuardProps 인터페이스:
@@ -16,8 +17,12 @@ interface GuestGuardProps {
  * * @param {GuestGuardProps} props - children (자식 컴포넌트)
  */
 export function GuestGuard({ children }: GuestGuardProps) {
-  // 1. 전역 스토어에서 Access Token의 존재 여부를 통해 인증 상태를 확인합니다.
-  const isAuthenticated = authStore((s) => !!s.isAuthenticated);
+  // useAuthStore 훅을 사용하여 스토어에서 isAuthenticated, isAuthInitialized 상태만 가져옵니다.
+  const { isAuthenticated, isAuthInitialized } = authStore();
+
+  if (!isAuthInitialized) {
+    return <LoadingDots fullscreen={true} />; // 또는 로딩 스켈레톤
+  }
 
   // 2. 인증 상태 확인 및 처리
   // 이미 로그인 상태(isAuthenticated === true)라면,

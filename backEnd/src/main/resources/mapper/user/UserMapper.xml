@@ -21,7 +21,7 @@
 
 	<!-- 회원 삽입 (USER_ID는 SEQ로 처리) -->
     <insert id="insertUser" parameterType="com.todoMaster.user.vo.UserInfoVO">
-		<selectKey keyProperty="userId" resultType="int" order="BEFORE">
+		<selectKey keyProperty="userId" resultType="Long" order="BEFORE">
 		    SELECT SEQ_USER_ID.NEXTVAL FROM DUAL
 		</selectKey>
 		

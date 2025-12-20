@@ -14,10 +14,10 @@ import { useAuth } from '../hooks/useAuth';
 import { appToast } from '@/shared/utils/appToast';
 
 export function LoginForm() {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   // 커스텀 훅에서 서버 요청 함수와 상태 가져오기
   const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   // useForm 훅을 사용하여 폼 상태 및 메서드 초기화
   const {
@@ -58,6 +58,22 @@ export function LoginForm() {
     // 로그인 성공 후 '/todos' 경로로 이동 (replace: true는 뒤로 가기 기록에서 현재 페이지를 대체)
     //navigate('/todos', { replace: true });
   };
+
+  // 카카오 로그인 인증 URL
+  const KAKAO_AUTH_URL =
+    `https://kauth.kakao.com/oauth/authorize` +
+    `?client_id=${import.meta.env.VITE_KAKAO_CLIENT_ID}` +
+    `&redirect_uri=${import.meta.env.VITE_KAKAO_OAUTH_REDIRECT_URI}` +
+    `&response_type=code` +
+    `&state=kakao`;
+  // 구글 로그인 인증 URL
+  const GOOGLE_AUTH_URL =
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}` +
+    `&redirect_uri=${import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT_URI}` +
+    `&response_type=code` +
+    `&scope=profile email` +
+    `&state=google`;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -147,7 +163,12 @@ export function LoginForm() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Button type="button" variant="outline" className="h-12 bg-card hover:bg-accent">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 bg-card hover:bg-accent"
+          onClick={() => navigate(GOOGLE_AUTH_URL)}
+        >
           <GoogleIcon size={20} className="w-5 h-5 mr-2" />
           <span className="hidden sm:inline">Google로 로그인</span>
           <span className="sm:hidden">Google</span>
@@ -157,6 +178,7 @@ export function LoginForm() {
           // 기본 variant는 'default'로 두고, 커스텀 클래스로 색상을 완벽히 덮어씌웁니다.
           variant="default" // variant는 유지하되, 아래 className으로 오버라이드
           className="h-12 !bg-kakao-yellow hover:!bg-[#FEE500]/90 text-black shadow-sm border border-transparent"
+          onClick={() => navigate(KAKAO_AUTH_URL)}
         >
           {/* 🌟 카카오 아이콘 (필수: 검은색, 텍스트와 분리) */}
           <KakaoIcon size={20} className="w-5 h-5 mr-2" />
