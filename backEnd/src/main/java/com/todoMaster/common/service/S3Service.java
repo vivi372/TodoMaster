@@ -1,0 +1,132 @@
+package com.todoMaster.common.service;
+
+import java.net.URL;
+import java.time.Duration;
+import java.util.UUID;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.todoMaster.global.exception.CustomException;
+import com.todoMaster.global.exception.ErrorCode;
+
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+/**
+ * AWS S3에 파일을 직접 업로드할 수 있도록 '미리 서명된 URL (Presigned URL)'을 생성하는 서비스 클래스.
+ * 이를 통해 백엔드 서버를 거치지 않고 프론트엔드에서 S3로 바로 파일을 업로드할 수 있게 합니다.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class S3Service {
+
+    // S3 Presigner 클라이언트: 미리 서명된 URL을 생성하는 핵심 객체입니다.
+    private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
+
+    // application.yml 또는 환경 변수에서 S3 버킷 이름을 주입받습니다.
+    @Value("${aws.s3.bucket}")
+    private String bucket;
+
+    /**
+     * S3에 파일을 업로드하기 위한 미리 서명된 URL과 파일 경로(Object Key)를 생성합니다.
+     *
+     * @param directory 업로드할 파일이 위치할 S3 버킷 내의 디렉토리 경로 (예: "profile-images")
+     * @param contentType 업로드할 파일의 MIME 타입 (예: "image/jpeg", "application/pdf")
+     * @return 생성된 URL과 S3 객체 키를 포함하는 PresignResult 레코드
+     */
+    public PresignResult generatePresignedUrl(String directory, String contentType) {
+    	
+        // 1. 고유한 파일 이름 생성: 파일명 중복을 피하기 위해 UUID를 사용합니다.
+        String fileName = UUID.randomUUID().toString();
+        // 2. S3 객체 키 (Object Key) 생성: 디렉토리 경로와 파일 이름을 결합합니다.
+        String objectKey = directory + "/" + fileName;
+        try {
+	        // 3. PutObjectRequest 생성: S3에 업로드될 객체의 기본 정보를 설정합니다.
+	        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+	                .bucket(bucket)             // 대상 S3 버킷 이름
+	                .key(objectKey)             // S3 버킷 내의 파일 경로 및 이름
+	                .contentType(contentType)   // 업로드할 파일의 MIME 타입 명시
+	                .build();
+	
+	        // 4. PutObjectPresignRequest 생성: 미리 서명된 URL 생성 요청 정보를 설정합니다.
+	        PutObjectPresignRequest presignRequest =
+	                PutObjectPresignRequest.builder()
+	                        // 서명 유효 시간 설정: 5분 동안만 이 URL을 사용하여 업로드가 가능합니다.
+	                        .signatureDuration(Duration.ofMinutes(5))
+	                        // 미리 서명할 PutObject 요청 정보를 연결합니다.
+	                        .putObjectRequest(putObjectRequest)
+	                        .build();
+	        // 5. Presigned URL 생성: S3 Presigner를 사용하여 최종 URL을 얻습니다.
+	        URL url = s3Presigner.presignPutObject(presignRequest).url();
+	        
+	        // 6. 결과 반환: 프론트엔드에서 사용할 URL 문자열과 백엔드에서 추적할 객체 키를 반환합니다.
+	        return new PresignResult(url.toString(), objectKey);
+	        
+        } catch (Exception e) {
+        	// 로그는 반드시 남긴다
+            log.error("Presigned URL generation failed. key={}", objectKey, e);
+
+            // 사용자에게는 추상화된 에러만 전달
+            throw new CustomException(ErrorCode.PRESIGNED_URL_GENERATION_FAILED);
+		}
+
+    }
+    
+    /**
+     * S3 객체 이동
+     *
+     * S3에는 move API가 없으므로
+     * 1. copy
+     * 2. delete
+     * 순서로 처리
+     *
+     * @param sourceKey 이동할 원본 object key
+     * @param targetKey 이동될 object key
+     */
+    public void move(String sourceKey, String targetKey) {
+    	try {
+	        // 1. COPY
+	        CopyObjectRequest copyRequest = CopyObjectRequest.builder()
+	                .sourceBucket(bucket)
+	                .sourceKey(sourceKey)
+	                .destinationBucket(bucket)
+	                .destinationKey(targetKey)
+	                .build();
+	
+	        s3Client.copyObject(copyRequest);
+	
+	        // 2. DELETE (copy 성공 후)
+	        DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+	                .bucket(bucket)
+	                .key(sourceKey)
+	                .build();
+	
+	        s3Client.deleteObject(deleteRequest);
+    	} catch (Exception e) {
+    		 // 내부 에러이므로 상세 로그 필수
+            log.error("S3 move failed. source={}, target={}", sourceKey, targetKey, e);
+
+            // 사용자에게는 내부 처리 실패로만 전달
+            throw new CustomException(ErrorCode.FILE_MOVE_FAILED);
+		}
+    }
+
+    /**
+     * Presigned URL과 S3 객체 키(Object Key)를 담는 레코드 클래스입니다.
+     * 레코드는 불변(Immutable) 데이터 전달 객체(DTO)로 사용하기에 적합합니다.
+     *
+     * @param url 프론트엔드가 파일을 PUT 요청할 미리 서명된 URL
+     * @param objectKey S3 버킷에 저장될 파일의 전체 경로
+     */
+    public record PresignResult(String url, String objectKey) {}
+}

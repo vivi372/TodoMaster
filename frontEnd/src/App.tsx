@@ -5,6 +5,7 @@ import { authStore } from './features/auth/store/authStore';
 import AppRoutes from './app/Routes';
 import { BrowserRouter } from 'react-router-dom';
 import './styles/globals.css';
+import 'react-easy-crop/react-easy-crop.css';
 import { ModalProvider } from './shared/ui/ModalProvider';
 
 function App() {

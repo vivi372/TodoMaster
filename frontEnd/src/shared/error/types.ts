@@ -6,6 +6,9 @@ export type ServerErrorCode =
   // ===== 공통 =====
   | 'INVALID_INPUT_VALUE'
   | 'INTERNAL_SERVER_ERROR'
+  | 'PRESIGNED_URL_GENERATION_FAILED'
+  | 'FILE_MOVE_FAILED'
+  | 'EMAIL_SENDING_FAILURE'
   // ===== 인증 / 인가 =====
   | 'INVALID_TOKEN'
   | 'EXPIRED_TOKEN'

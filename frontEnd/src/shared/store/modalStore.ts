@@ -1,10 +1,14 @@
 ﻿import { create } from 'zustand';
-import type { ConfirmModalProps } from '../ui/modal';
-import type { ErrorActionCode } from '../hooks/useErrorActions';
+import type { actionCode } from '../hooks/useMessageActions';
 
 // ConfirmModalProps에서 버튼/핸들러 관련 속성들을 제외한 순수 데이터 타입
-type BaseModalData = Omit<ConfirmModalProps, 'open' | 'onOpenChange' | 'onConfirm' | 'onCancel'> & {
-  action?: ErrorActionCode;
+type BaseModalData = {
+  title: string;
+  description: React.ReactNode;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'default' | 'success' | 'error' | 'warning' | 'info';
+  action?: actionCode;
 };
 
 // Alert 모달 데이터는 Confirm 모달 데이터와 동일하지만, 버튼이 하나여야 함

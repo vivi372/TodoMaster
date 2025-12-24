@@ -1,4 +1,4 @@
-﻿import { useErrorActions } from '../hooks/useErrorActions';
+﻿import { useMessageActions } from '../hooks/useMessageActions';
 import { useModalStore } from '../store/modalStore';
 import { AlertModal, ConfirmModal } from './modal'; // Modal.tsx에서 정의된 ConfirmModal
 import { useShallow } from 'zustand/react/shallow';
@@ -13,7 +13,7 @@ export function ModalProvider() {
       handleClose: state.handleClose,
     })),
   );
-  const { executeAction } = useErrorActions(); // useErrorActions 훅 사용
+  const { executeAction } = useMessageActions(); // useErrorActions 훅 사용
 
   const open = !!modalData;
   if (!modalData) {

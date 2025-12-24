@@ -17,9 +17,18 @@ public interface UserMapper {
 
     // 회원가입
     int insertUser(UserInfoVO vo);
+    
+    // 이메일로 유저 조회 (로그인)
+    UserInfoVO selectUnverifiedUser(@Param("userId") Long userId ,@Param("email") String email);
+    
+    // 계정 활성화
+    int accountActivation(Long userId);
 
     // 이메일로 유저 조회 (로그인)
-    UserInfoVO findByEmail(String email);
+    UserInfoVO selectUserForLogin(String email);
+    
+    // 이메일로 유저 조회
+    UserInfoVO selectUser(String email);
     
     // id로 유저 조회
     UserInfoVO findById(Long userId);
@@ -39,7 +48,8 @@ public interface UserMapper {
     
     // 프로필 이미지 수정
     int updateProfileImage(@Param("userId") Long userId,
-            @Param("profileImg") String profileImg);
+            @Param("profileImg") String profileImg, 
+            @Param("profileImageStatus") String profileImageStatus);
     
     // 회원 탈퇴
     int deleteUser(Long userId);

@@ -1,18 +1,18 @@
 ﻿import { useNavigate } from 'react-router-dom';
 
 // 🟢 1. Action Code 정의 (모든 가능한 액션을 명시적으로 나열)
-export type ErrorActionCode = 'REDIRECT_TO_LOGIN' | 'RELOAD_PAGE' | 'LOGOUT_AND_REDIRECT';
+export type actionCode = 'REDIRECT_TO_LOGIN' | 'RELOAD_PAGE' | 'LOGOUT_AND_REDIRECT';
 
 /**
- * 에러 정책에 명시된 특정 후속 조치(Action)를 실행하는 훅입니다.
+ * 메시징 정책에 명시된 특정 후속 조치(Action)를 실행하는 훅입니다.
  * 모든 액션 로직을 통합 관리합니다.
  */
-export const useErrorActions = () => {
+export const useMessageActions = () => {
   // 라우팅 액션을 위해 useNavigate 훅 사용
   const navigate = useNavigate();
 
   // 🟢 2. Action Code와 실제 실행 함수를 매핑하는 객체
-  const actions: Record<ErrorActionCode, () => void> = {
+  const actions: Record<actionCode, () => void> = {
     // 🔐 로그인 페이지로 이동 (UNAUTHORIZED_USER에 사용)
     REDIRECT_TO_LOGIN: () => {
       // replace: true를 사용하여 뒤로 가기 버튼으로 이전 페이지로 돌아가지 않도록 합니다.
@@ -40,7 +40,7 @@ export const useErrorActions = () => {
    */
   const executeAction = (actionCode: string) => {
     // 타입 가드를 통해 유효한 Action Code인지 확인
-    const action = actions[actionCode as ErrorActionCode];
+    const action = actions[actionCode as actionCode];
 
     if (action) {
       action();

@@ -27,7 +27,8 @@
 		
         INSERT INTO USER_INFO (
             USER_ID, EMAIL, PASSWORD, NICKNAME,
-            PROFILE_IMG, PROVIDER, PROVIDER_ID,
+            PROFILE_IMG, PROFILE_IMAGE_STATUS,
+            IS_VERIFIED, PROVIDER, PROVIDER_ID,
             SALT ,REFRESH_TOKEN, CREATED_AT
         )
         VALUES (
@@ -36,6 +37,8 @@
             #{password},
             #{nickname},
             #{profileImg},
+            #{profileImageStatus},
+            #{isVerified},
             #{provider},
             #{providerId},
             #{salt},
@@ -43,10 +46,34 @@
             SYSDATE
         )
     </insert>
+    
+    <!-- 인증 필요한 계정 찾기 -->
+    <select id="selectUnverifiedUser" resultType="com.todoMaster.user.vo.UserInfoVO">
+    	SELECT *
+        FROM USER_INFO
+        WHERE USER_ID = #{userId}
+        AND EMAIL = #{email}
+        AND IS_VERIFIED = 'UNVERIFIED'
+    </select>
+    
+    <!-- 계정 활성화 -->
+    <update id="accountActivation">
+    	UPDATE 
+    	USER_INFO 
+    	SET IS_VERIFIED = 'VERIFIED' 
+    	WHERE USER_ID = ${userId}
+    </update>
 
 
 	<!-- 이메일로 조회 (로그인용) -->
-    <select id="findByEmail" resultType="com.todoMaster.user.vo.UserInfoVO">
+    <select id="selectUserForLogin" resultType="com.todoMaster.user.vo.UserInfoVO">
+        SELECT *
+        FROM USER_INFO
+        WHERE EMAIL = #{email} AND IS_VERIFIED = 'VERIFIED'
+    </select>
+    
+    <!-- 이메일로 조회-->
+    <select id="selectUser" resultType="com.todoMaster.user.vo.UserInfoVO">
         SELECT *
         FROM USER_INFO
         WHERE EMAIL = #{email}
@@ -90,6 +117,7 @@
 	<update id="updateProfileImage">
 		UPDATE USER_INFO
 		SET PROFILE_IMG = #{profileImg},
+		 	PROFILE_IMAGE_STATUS = #{profileImageStatus},
 		UPDATED_AT = SYSDATE
 		WHERE USER_ID = #{userId}
 	</update>

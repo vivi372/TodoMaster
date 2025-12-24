@@ -79,6 +79,23 @@ public class JwtProvider {
 				.signWith(key, SignatureAlgorithm.HS256) // HS256 알고리즘과 Key로 서명
 				.compact(); // 토큰 생성 및 직렬화
 	}
+	
+	/**
+	 * verificationSToken(이메일 인증 토큰)을 발급하는 메서드입니다.
+	 * * @param userId 사용자 고유 ID (Token의 Subject로 사용)
+	 * @param email 로그인 이메일 (Token의 Custom Claim으로 포함)
+	 * @return 발급된 verificationSToken (String)
+	 */
+	public String createVerificationSToken(Long userId, String email) {
+		Instant now = Instant.now();
+		return Jwts.builder()
+				.setSubject(String.valueOf(userId)) // 토큰의 주체 (사용자 ID) 설정
+				.setIssuedAt(Date.from(now)) // 토큰 발급 시간 설정 (iat)
+				.setExpiration(Date.from(now.plusMillis(accessExpireMillis))) // 토큰 만료 시간 설정 (exp)
+				.claim("email", email) // 커스텀 클레임 추가 (이메일)
+				.signWith(key, SignatureAlgorithm.HS256) // HS256 알고리즘과 Key로 서명
+				.compact(); // 토큰 생성 및 직렬화
+	}
 
 	
 	/**
@@ -113,6 +130,24 @@ public class JwtProvider {
 			Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
 			// Subject(사용자 ID)를 가져와 Long 타입으로 변환 후 반환합니다.
 			return Long.valueOf(claims.getSubject());
+		} catch (ExpiredJwtException e) {
+			throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+		} catch (JwtException | IllegalArgumentException e) {
+			throw new CustomException(ErrorCode.INVALID_TOKEN);
+		}
+	}
+	
+	/**
+	 * 토큰에서 사용자 고유 ID(Subject)를 추출하는 메서드입니다.
+	 * * @param token 클레임을 추출할 JWT
+	 * @return 토큰에 포함된 사용자 email
+	 * @throws JwtException 유효하지 않은 토큰일 경우 예외 발생
+	 */
+	public String getEmail(String token) {
+		try {
+			// 토큰을 파싱하여 JWT 본문(Body)에 해당하는 Claims를 가져옵니다.
+			Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+			return claims.get("email").toString();
 		} catch (ExpiredJwtException e) {
 			throw new CustomException(ErrorCode.EXPIRED_TOKEN);
 		} catch (JwtException | IllegalArgumentException e) {

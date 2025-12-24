@@ -5,9 +5,9 @@ import com.todoMaster.auth.dto.request.LoginRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.auth.util.TokenHashUtil;
+import com.todoMaster.common.service.S3Service;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
-import com.todoMaster.global.s3.S3Uploader;
 import com.todoMaster.user.mapper.UserMapper;
 import com.todoMaster.user.vo.UserInfoVO;
 
@@ -31,46 +31,95 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
+
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final TokenHashUtil tokenHashUtil;
-    private final S3Uploader s3Uploader;
     private final SocialOAuthProcessor socialOAuthProcessor;
+    private final S3Service s3Service;
+    private final VerificationService verificationService;
     
+    @Transactional
     public void signup(UserSignupRequest req) {
 
         if (userMapper.countByEmail(req.getEmail()) > 0) {
             throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
-        }        
-
-        try {            
-            UserInfoVO vo = new UserInfoVO();
-            vo.setEmail(req.getEmail());
-            vo.setPassword(passwordEncoder.encode(req.getPassword()));
-            vo.setNickname(req.getNickname());
-            vo.setProfileImg(req.getProfileImg());
-
-            int result = userMapper.insertUser(vo);
-
-            if (result == 0) {
-                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-
-        } catch (Exception e) {
-
-            // 🔥 여기서 S3 이미지 삭제
-            if (req.getProfileImg() != null) {
-                try {
-                    s3Uploader.delete(req.getProfileImg());
-                } catch (Exception s3e) {
-                    // 로그만 남기고 흐름은 막지 않음
-                    System.err.println("S3 이미지 삭제 실패: " + s3e.getMessage());
-                }
-            }
-
-            throw e; // 원래 예외 다시 던짐
+        }                  
+        UserInfoVO vo = new UserInfoVO();
+        vo.setEmail(req.getEmail());
+        vo.setPassword(passwordEncoder.encode(req.getPassword()));
+        vo.setNickname(req.getNickname());
+        vo.setProfileImg(req.getProfileImg());
+        vo.setIsVerified("UNVERIFIED"); // 이메일 인증 전에는 UNVERIFIED으로 저장
+        
+        if(vo.getProfileImg() != null) {
+        	vo.setProfileImageStatus("TEMP");
+        } else {
+        	vo.setProfileImageStatus("NONE");
         }
+
+        int result = userMapper.insertUser(vo);
+
+        if (result == 0) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        
+        // 사용자의 이메일로 인증 이메일 보내기
+        verificationService.createVerificationTokenAndSendEmail(
+        		vo.getEmail(),
+        		vo.getUserId(),
+        		vo.getNickname()
+        	);
+        
+        // temp 경로의 있던 이미지 경로 이동
+        try {
+        	if (req.getProfileImg() != null) {
+        		String newProfileImage = "user/" + vo.getUserId() + "/profile.png";
+                s3Service.move(
+                		req.getProfileImg(),
+                		newProfileImage);
+                // 경로 이동 성공시 db READY로 업데이트
+                userMapper.updateProfileImage(vo.getUserId(),newProfileImage,"READY");    
+            }
+        } catch (CustomException e) {      
+        	// 경로 이동 실패시 db FAILED로 업데이트
+            log.warn("Profile image move failed. userId={}",vo.getUserId(), e);
+            userMapper.updateProfileImage(vo.getUserId(),vo.getProfileImg(),"FAILED");
+        }
+        
+
+    }
+    
+    // 인증 메일 재전송 서비스 메서드
+    public void rseend(String email) {
+    	// 1. 이메일을 통해 계정 정보 가져오기
+    	UserInfoVO user = userMapper.selectUser(email);
+    	if (user == null) throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    	
+    	// 2. 사용자의 이메일로 인증 이메일 보내기
+    	// 사용자의 이메일로 인증 이메일 보내기
+        verificationService.createVerificationTokenAndSendEmail(
+        		user.getEmail(),
+        		user.getUserId(),
+        		user.getNickname()
+        	);
+
+    }
+    
+    // 계정 활성화 서비스 메서드
+    public void accountActivation(String token) {
+    	// 1. 토큰 검증
+    	UserInfoVO tokenUser = verificationService.extractClaimsFromToken(token);
+    	// 새로운 에러 필요
+    	
+    	// 2. 이메일 / userId DB에 존재하는지 조회
+    	UserInfoVO storeUser = userMapper.selectUnverifiedUser(tokenUser.getUserId(),tokenUser.getEmail());
+    	if (storeUser == null) throw new CustomException(ErrorCode.USER_NOT_FOUND); // 새로운 에러 필요
+    	
+    	// 3. 검증 후 계정 활성화
+    	userMapper.accountActivation(tokenUser.getUserId());
+
     }
     
     // -------- 소셜 회원가입 --------
@@ -89,12 +138,17 @@ public class AuthService {
         vo.setProvider(socialUser.getProvider());
         vo.setProviderId(socialUser.getProviderId());
         vo.setProfileImg(socialUser.getProfileImage());
+        if(vo.getProfileImg() != null) {
+        	vo.setProfileImageStatus("READY");
+        } else {
+        	vo.setProfileImageStatus("NONE");
+        }
 
         int result = userMapper.insertUser(vo);
 
         if (result == 0) {            
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        }        
 
         return vo.getUserId();
     }
@@ -105,7 +159,7 @@ public class AuthService {
      */
     public String login(LoginRequest req) {
         // 이메일로 사용자 조회
-        UserInfoVO user = userMapper.findByEmail(req.getEmail());
+        UserInfoVO user = userMapper.selectUserForLogin(req.getEmail());
         if (user == null) throw new CustomException(ErrorCode.USER_NOT_FOUND);
 
         // 비밀번호 검증
@@ -159,6 +213,12 @@ public class AuthService {
             vo.setProvider(provider);
             vo.setProviderId(userInfo.getProviderId());
             vo.setProfileImg(userInfo.getProfileImage());
+            vo.setIsVerified("VERIFIED"); // 소셜 유저는 이메일 인증이 필요없으므로 VERIFIED 저장
+            if(vo.getProfileImg() != null) {
+            	vo.setProfileImageStatus("READY");
+            } else {
+            	vo.setProfileImageStatus("NONE");
+            }
 
             int result = userMapper.insertUser(vo);
             userId = vo.getUserId();
@@ -248,7 +308,7 @@ public class AuthService {
      */
     public String resetPassword(String email) {
 
-        UserInfoVO user = userMapper.findByEmail(email);
+        UserInfoVO user = userMapper.selectUserForLogin(email);
         if (user == null)
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         
@@ -281,7 +341,8 @@ public class AuthService {
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new CustomException(ErrorCode.PASSWORD_NOT_MATCH);
         }
-    }
+    }  
+    
 
     /**
      * Access token에서 userId 얻는 유틸(컨트롤러에서 직접 쓰기 편리하도록)

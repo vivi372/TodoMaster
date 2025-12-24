@@ -17,6 +17,10 @@ public class UserInfoVO {
     private String nickname;
     // 프로필 이미지 URL
     private String profileImg;
+    // 프로필 이미지 상태
+    private String profileImageStatus;
+    // 이메일 인증 여부
+    private String isVerified;
     // GOOGLE / KAKAO / NAVER
     private String provider;
     // 소셜 고유 사용자 ID

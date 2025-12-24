@@ -7,6 +7,7 @@ import type { AppError } from '@/shared/error/types';
  */
 export function parseAxiosError(error: unknown): AppError {
   if (!axios.isAxiosError(error)) {
+    console.error(error);
     return {
       title: '알 수 없는 오류가 발생했습니다.',
       description: '',

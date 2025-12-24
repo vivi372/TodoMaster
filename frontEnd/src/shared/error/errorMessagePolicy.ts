@@ -1,4 +1,4 @@
-﻿import type { ErrorActionCode } from '../hooks/useErrorActions';
+﻿import type { actionCode } from '../hooks/useMessageActions';
 import type { ServerErrorCode } from './types';
 
 export type messagePolicy = {
@@ -6,7 +6,7 @@ export type messagePolicy = {
   silent?: boolean;
   displayType: 'toast' | 'modal';
   ModalType?: 'alert' | 'confirm';
-  action?: ErrorActionCode;
+  action?: actionCode;
 };
 
 /**
@@ -27,6 +27,26 @@ export const errorMessagePolicy: Record<ServerErrorCode, messagePolicy> = {
 
   // 서버 내부 오류: 치명적이므로 모달로 고지 (사용자에게 새로고침 등을 유도)
   INTERNAL_SERVER_ERROR: {
+    type: 'error',
+    silent: false,
+    displayType: 'modal',
+    ModalType: 'alert', // 🟢 alert: 단순 고지 후 닫기
+  },
+
+  PRESIGNED_URL_GENERATION_FAILED: {
+    type: 'error',
+    silent: false,
+    displayType: 'modal',
+    ModalType: 'alert', // 🟢 alert: 단순 고지 후 닫기
+  },
+
+  FILE_MOVE_FAILED: {
+    type: 'error',
+    silent: true,
+    displayType: 'toast',
+  },
+
+  EMAIL_SENDING_FAILURE: {
     type: 'error',
     silent: false,
     displayType: 'modal',

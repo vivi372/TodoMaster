@@ -11,7 +11,7 @@ export const useAuth = () => {
   // 1. Zustand 스토어에서 Access Token을 저장하는 액션(setAccessToken)만 가져옵니다.
   const setAccessToken = authStore.getState().setAccessToken;
 
-  // 2. 일반 로그인 Mutation 정의
+  // 일반 로그인 Mutation 정의
   const loginMutation = useMutation({
     // 실제 서버 요청을 담당하는 함수 (payload를 인자로 받음)
     mutationFn: authApi.login,
@@ -23,7 +23,7 @@ export const useAuth = () => {
     },
   });
 
-  // 3. 소셜 로그인 Mutation 정의
+  // 소셜 로그인 Mutation 정의
   const socialLoginMutation = useMutation({
     // mutationFn: useMutation의 mutate가 호출될 때 전달된 인자를 받아,
     // authApi.socialLogin 함수에 맞는 형태로 가공하여 호출합니다.
@@ -35,17 +35,39 @@ export const useAuth = () => {
     },
   });
 
+  // 인증 이메일 재전송 Mutation 정의
+  const resendVerificationEmailMutation = useMutation({
+    // 실제 서버 요청을 담당하는 함수 (payload를 인자로 받음)
+    mutationFn: authApi.resendVerificationEmail,
+  });
+
+  // 계정 활성화 Mutation 정의
+  const accountActivationMutation = useMutation({
+    // 실제 서버 요청을 담당하는 함수 (payload를 인자로 받음)
+    mutationFn: authApi.accountActivation,
+  });
+
   // 4. 컴포넌트에서 사용할 기능과 상태를 반환합니다.
   return {
-    // mutateAsync 함수를 login이라는 이름으로 반환하여 컴포넌트에서 쉽게 호출할 수 있게 합니다.
+    // mutate 함수를 login이라는 이름으로 반환하여 컴포넌트에서 쉽게 호출할 수 있게 합니다.
     login: loginMutation.mutate,
 
     // 소셜 로그인 mutateAsync 함수를 반환합니다.
     socialLogin: socialLoginMutation.mutateAsync,
 
+    // 인증 이메일 재전송 mutateAsync 함수를 반환합니다
+    resend: resendVerificationEmailMutation.mutateAsync,
+
+    // 계정 활성화 mutateAsync 함수를 반환합니다
+    accountActivation: accountActivationMutation.mutateAsync,
+
     // 두 로그인 요청 중 하나라도 진행 중이면 true를 반환하는 통합 로딩 상태
     isLoading:
       loginMutation.isPending || // 일반 로그인 로딩 상태
       socialLoginMutation.isPending, // 소셜 로그인 로딩 상태
+
+    resendIsLoading: resendVerificationEmailMutation.isPending,
+
+    accountActivationIsLoading: accountActivationMutation.isPending,
   };
 };

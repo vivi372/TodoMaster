@@ -14,6 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { appToast } from '@/shared/utils/appToast';
 import { motion } from 'framer-motion';
 
+// 애니메이션 설정
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {

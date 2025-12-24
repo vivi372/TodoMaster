@@ -12,6 +12,19 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  # 스프링 메일
+  mail:
+    host: smtp.naver.com           # 네이버 SMTP 서버 호스트
+    port: 587                      # 보안 연결(TLS)을 위한 포트
+    username: ym970825  
+    password:  ${NAVER_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true               # SMTP 인증 사용
+          starttls:
+            enable: true           # TLS(Transport Layer Security) 사용
+            required: true         # TLS 연결 필수
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
@@ -52,4 +65,3 @@ oauth:
     client-id: ${GOOGLE_CLIENT_ID}
     client-secret: ${GOOGLE_CLIENT_SECRET}
     redirect-uri: http://localhost:5173/auth/google/callback
-  

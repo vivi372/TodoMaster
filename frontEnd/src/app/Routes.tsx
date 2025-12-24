@@ -8,6 +8,9 @@ import { authStore } from '@/features/auth/store/authStore';
 import { GuestGuard } from './guards/GuestGuard';
 import { AuthGuard } from './guards/AuthGuard';
 import SocialRedirectPage from '@/pages/socialRedirect/SocialRedirectPage';
+import TermsPage from '@/pages/terms/TermsPage';
+import PrivacyPage from '@/pages/privacy/PrivacyPage';
+import VerifyPage from '@/pages/verify/VerifyPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -52,6 +55,18 @@ const routes: RouteObject[] = [
         <SignupPage />
       </GuestGuard>
     ),
+  },
+  {
+    path: '/terms',
+    element: <TermsPage />,
+  },
+  {
+    path: '/privacy',
+    element: <PrivacyPage />,
+  },
+  {
+    path: '/verify',
+    element: <VerifyPage />,
   },
   {
     path: '/auth/:provider/callback',

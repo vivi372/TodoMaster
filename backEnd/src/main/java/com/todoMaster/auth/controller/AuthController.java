@@ -1,7 +1,9 @@
 package com.todoMaster.auth.controller;
 
+import com.todoMaster.auth.dto.request.AccountActivationRequest;
 import com.todoMaster.auth.dto.request.LoginRequest;
 import com.todoMaster.auth.dto.request.PasswordCheckRequest;
+import com.todoMaster.auth.dto.request.ResendRequest;
 import com.todoMaster.auth.dto.request.SocialLoginRequest;
 import com.todoMaster.auth.dto.request.SocialSignupRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
@@ -27,9 +29,27 @@ public class AuthController {
 
     private final AuthService authService;
     
+    
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody @Valid UserSignupRequest req) {
-    	authService.signup(req);
+    	authService.signup(req);    	
+    	
+        return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
+    }
+    
+    // 인증 이메일 재전송
+    @PostMapping("/rseend")
+    public ResponseEntity<?> rseend(@RequestBody @Valid ResendRequest req) {
+    	authService.rseend(req.getEmail());    	
+    	
+        return ResponseEntity.ok(ApiResponse.success("이메일 재전송 완료"));
+    }
+    
+    // 계정 활성화
+    @PostMapping("/verify")
+    public ResponseEntity<?> accountActivation(@RequestBody @Valid AccountActivationRequest req) {
+    	authService.accountActivation(req.getToken());    	
+    	
         return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
     }
     
