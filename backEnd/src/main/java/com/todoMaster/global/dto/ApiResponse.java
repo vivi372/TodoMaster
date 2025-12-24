@@ -71,17 +71,35 @@ public class ApiResponse<T> {
                 false,
                 code.getMessage(),
                 null,
-                new ErrorDetail(code.name(), code.getStatus().value(), code.getMessage())
+                new ErrorDetail(
+                		code.name(), 
+                		code.getStatus().value(), 
+                		code.getMessage(),
+                		code.getDescription(),
+                		code.isSilent(),
+                		code.getType().getValue(),
+                		code.getDisplayType().getValue(),
+                		code.getAction().getValue()
+                	)
         );
     }
-
+    
     /** 실패 + 커스텀 메시지 */
     public static <T> ApiResponse<T> fail(ErrorCode code, String customMessage) {
         return new ApiResponse<>(
                 false,
                 customMessage,
                 null,
-                new ErrorDetail(code.name(), code.getStatus().value(), customMessage)
+                new ErrorDetail(
+                		code.name(), 
+                		code.getStatus().value(), 
+                		customMessage,
+                		"",
+                		code.isSilent(),
+                		code.getType().getValue(),
+                		code.getDisplayType().getValue(),
+                		code.getAction().getValue()
+                	)
         );
     }
     
@@ -94,5 +112,12 @@ public class ApiResponse<T> {
         private String code;   // 예: USER_NOT_FOUND
         private int status;    // 예: 404
         private String message; // 상세 오류 메시지
-    }
+        private String description; // 상세 오류 메시지
+        private boolean silent; // 상세 오류 메시지
+        private String type; // 상세 오류 메시지
+        private String displayType; // 상세 오류 메시지
+        private String action; // 상세 오류 메시지
+    }    
+    
+    
 }

@@ -84,7 +84,7 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
         <div
           className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0"
           // 배경 클릭 시 모달 닫기
-          onClick={() => onOpenChange(false)}
+          //onClick={() => onOpenChange(false)}
         />
         {children}
       </div>
@@ -103,9 +103,9 @@ export function ModalContent({ className, children, showClose = true }: ModalCon
   return (
     <div
       className={cn(
-        'relative z-50 w-full max-w-lg mx-4',
-        'bg-white rounded-2xl shadow-2xl',
-        'border-4 border-primary/20',
+        'relative z-50 w-full max-w-md mx-4',
+        'bg-white rounded-xl shadow-xl',
+        'border border-gray-200',
         // 애니메이션 효과
         'animate-in zoom-in-95 fade-in-0 slide-in-from-bottom-4',
         'duration-300',
@@ -117,11 +117,11 @@ export function ModalContent({ className, children, showClose = true }: ModalCon
       {showClose && (
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-full p-1.5 
-                      text-gray-400 hover:text-gray-600 hover:bg-gray-100
-                      transition-all duration-200 hover:rotate-90"
+          className="absolute right-3 top-3 rounded-sm p-0.5
+                   text-gray-400 hover:text-gray-600
+                   transition-colors duration-200"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
           <span className="sr-only">닫기</span>
         </button>
       )}
@@ -135,30 +135,34 @@ export function ModalContent({ className, children, showClose = true }: ModalCon
 // ====================================================================
 
 export function ModalHeader({ className, children, variant = 'default' }: ModalHeaderProps) {
-  const variantStyles = {
-    // 테마별 배경색 및 테두리 색상 정의
-    default: 'bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20',
-    success: 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200',
-    error: 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200',
-    warning: 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200',
-    info: 'bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200',
-  };
-
-  const icons = {
+  const variantIcons = {
     // 테마별 아이콘 정의
     default: null,
-    success: <CheckCircle className="h-6 w-6 text-green-500" />,
-    error: <AlertCircle className="h-6 w-6 text-red-500" />,
-    warning: <AlertTriangle className="h-6 w-6 text-orange-500" />,
-    info: <Info className="h-6 w-6 text-blue-500" />,
+    success: (
+      <div className="w-16 h-16 rounded-full bg-green-50 border-2 border-green-200 flex items-center justify-center mx-auto mb-4">
+        <CheckCircle className="h-8 w-8 text-green-500" strokeWidth={2.5} />
+      </div>
+    ),
+    error: (
+      <div className="w-16 h-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center mx-auto mb-4">
+        <AlertCircle className="h-8 w-8 text-red-500" strokeWidth={2.5} />
+      </div>
+    ),
+    warning: (
+      <div className="w-16 h-16 rounded-full bg-orange-50 border-2 border-orange-200 flex items-center justify-center mx-auto mb-4">
+        <AlertTriangle className="h-8 w-8 text-orange-500" strokeWidth={2.5} />
+      </div>
+    ),
+    info: (
+      <div className="w-16 h-16 rounded-full bg-blue-50 border-2 border-blue-200 flex items-center justify-center mx-auto mb-4">
+        <Info className="h-8 w-8 text-blue-500" strokeWidth={2.5} />
+      </div>
+    ),
   };
 
   return (
-    <div className={cn('px-6 py-5 border-b-2', variantStyles[variant], 'rounded-t-2xl', className)}>
-      {/* default가 아닐 경우에만 아이콘 표시 */}
-      {variant !== 'default' && (
-        <div className="flex items-center gap-3 mb-3">{icons[variant]}</div>
-      )}
+    <div className={cn('px-6 pt-8 pb-2 text-center', className)}>
+      {variant !== 'default' && variantIcons[variant]}
       {children}
     </div>
   );
@@ -175,34 +179,19 @@ export function ModalBody({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <div className={cn('px-6 py-5', className)}>{children}</div>;
+  return <div className={cn('px-6 pb-6 text-center', className)}>{children}</div>;
 }
 
 export function ModalFooter({ className, children }: ModalFooterProps) {
-  return (
-    <div
-      className={cn(
-        'px-6 py-4 bg-gray-50/50 rounded-b-2xl',
-        'flex flex-col-reverse sm:flex-row sm:justify-end gap-2',
-        'border-t border-gray-100',
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn('px-6 pb-6 pt-2', 'flex flex-col gap-2', className)}>{children}</div>;
 }
 
 export function ModalTitle({ className, children }: ModalTitleProps) {
-  return (
-    <h2 className={cn('text-2xl font-bold text-gray-900', 'tracking-tight', className)}>
-      {children}
-    </h2>
-  );
+  return <h2 className={cn('text-lg font-semibold text-gray-900', className)}>{children}</h2>;
 }
 
 export function ModalDescription({ className, children }: ModalDescriptionProps) {
-  return <p className={cn('text-sm text-gray-600 leading-relaxed', className)}>{children}</p>;
+  return <p className={cn('text-sm text-gray-500 mt-2', className)}>{children}</p>;
 }
 
 // ====================================================================
@@ -247,7 +236,7 @@ export function ConfirmModal({
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-md">
+      <ModalContent className="max-w-sm">
         <ModalHeader variant={variant}>
           <ModalTitle>{title}</ModalTitle>
         </ModalHeader>
@@ -255,12 +244,18 @@ export function ConfirmModal({
           <ModalDescription>{description}</ModalDescription>
         </ModalBody>
         <ModalFooter>
+          {/* 확인 버튼 */}
+          <Button className="w-full" onClick={handleConfirm}>
+            {confirmText}
+          </Button>
           {/* 취소 버튼 */}
-          <Button variant="outline" onClick={handleCancel}>
+          <Button
+            variant="outline"
+            className="w-full border-gray-300 hover:bg-gray-50 bg-transparent"
+            onClick={handleCancel}
+          >
             {cancelText}
           </Button>
-          {/* 확인 버튼 */}
-          <Button onClick={handleConfirm}>{confirmText}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -306,7 +301,9 @@ export function AlertModal({
         </ModalBody>
         <ModalFooter>
           {/* 버튼이 하나만 존재 */}
-          <Button onClick={handleOk}>{okText}</Button>
+          <Button className="w-full" onClick={handleOk}>
+            {okText}
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

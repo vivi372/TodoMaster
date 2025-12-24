@@ -1,6 +1,8 @@
 package com.todoMaster.global.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -9,9 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.todoMaster.global.dto.ApiResponse;
 
-import java.util.HashMap;
-import java.util.Map;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -20,6 +21,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException ex) {
 
         ErrorCode code = ex.getErrorCode();
+        
+        log.warn("CustomException: {} | HttpStatus: {} | Message: {}", code.name(), code.getStatus(), code.getMessage());
 
         return ResponseEntity
         		.status(code.getStatus())
@@ -34,6 +37,8 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .map(error -> error.getDefaultMessage())
                 .orElse("입력 값이 올바르지 않습니다.");
+        
+        log.warn("ValidationException: {}", message);
 
         return ResponseEntity
         		.status(HttpStatus.BAD_REQUEST)
@@ -54,7 +59,9 @@ public class GlobalExceptionHandler {
 
     /** ✔ 서버 내부 오류 */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleException(Exception ex) {        
+    public ResponseEntity<ApiResponse<?>> handleException(Exception ex) {      
+    	
+    	log.error("Internal Server Error occurred!", ex);
 
         return ResponseEntity
         		.status(HttpStatus.INTERNAL_SERVER_ERROR)

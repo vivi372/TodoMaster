@@ -1,4 +1,6 @@
-﻿/**
+﻿import type { AppErrorPolicyMap } from '../api/parseAxiosError';
+
+/**
  * 서버에서 내려주는 에러 코드의 집합
  * - 반드시 백엔드 ErrorCode 와 1:1로 맞춘다
  */
@@ -16,10 +18,13 @@ export type ServerErrorCode =
   | 'TOKEN_NOT_FOUND'
   | 'REFRESH_TOKEN_NOT_FOUND'
   | 'REFRESH_TOKEN_MISMATCH'
+  | 'AUTHORIZATION_HEADER_MISSING'
+  | 'ACCOUNT_VERIFICATION_FAILED'
   // ===== 회원 =====
   | 'PASSWORD_NOT_MATCH'
   | 'EMAIL_DUPLICATION'
   | 'NICKNAME_DUPLICATION'
+  | 'VERIFICATION_ACCOUNT_MISSING'
   | 'USER_NOT_FOUND'
   | 'INVALID_PASSWORD'
   | 'SAME_PASSWORD_NOT_ALLOWED'
@@ -30,7 +35,5 @@ export type ServerErrorCode =
  */
 export interface AppError {
   code?: ServerErrorCode;
-  title: string;
-  description: string;
-  status?: number;
+  AppErrorPolicyMap: AppErrorPolicyMap;
 }

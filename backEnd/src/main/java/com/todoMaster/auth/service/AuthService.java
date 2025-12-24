@@ -115,42 +115,11 @@ public class AuthService {
     	
     	// 2. 이메일 / userId DB에 존재하는지 조회
     	UserInfoVO storeUser = userMapper.selectUnverifiedUser(tokenUser.getUserId(),tokenUser.getEmail());
-    	if (storeUser == null) throw new CustomException(ErrorCode.USER_NOT_FOUND); // 새로운 에러 필요
+    	if (storeUser == null) throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_MISSING); // 새로운 에러 필요
     	
     	// 3. 검증 후 계정 활성화
     	userMapper.accountActivation(tokenUser.getUserId());
 
-    }
-    
-    // -------- 소셜 회원가입 --------
-    @Transactional
-    public Long socialSignup(String provider, String code) {
-
-        SocialUserInfo socialUser = socialOAuthProcessor.getUserFromProvider(provider, code);
-
-        if (userMapper.countByEmail(socialUser.getEmail()) > 0) {
-            throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
-        }
-
-        UserInfoVO vo = new UserInfoVO();
-        vo.setEmail(socialUser.getEmail());
-        vo.setNickname(socialUser.getNickname());
-        vo.setProvider(socialUser.getProvider());
-        vo.setProviderId(socialUser.getProviderId());
-        vo.setProfileImg(socialUser.getProfileImage());
-        if(vo.getProfileImg() != null) {
-        	vo.setProfileImageStatus("READY");
-        } else {
-        	vo.setProfileImageStatus("NONE");
-        }
-
-        int result = userMapper.insertUser(vo);
-
-        if (result == 0) {            
-            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }        
-
-        return vo.getUserId();
     }
 
     /**
@@ -285,7 +254,11 @@ public class AuthService {
         String hashedToken = tokenHashUtil.hashToken(newRefresh, salt);
 
         // DB 갱신
-        userMapper.updateRefreshToken(userId, hashedToken, salt);
+        int result = userMapper.updateRefreshToken(userId, hashedToken, salt);
+        
+        if (result == 0) {                
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
 
         return newAccess + "::" + newRefresh;
     }
@@ -349,7 +322,7 @@ public class AuthService {
      */
     public Long getUserIdFromAccessToken(String accessToken) {
         if (!jwtProvider.validateToken(accessToken)) {
-            throw new IllegalArgumentException("유효하지 않은 액세스 토큰입니다.");
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
         return jwtProvider.getUserId(accessToken);
     }

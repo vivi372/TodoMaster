@@ -1,6 +1,7 @@
 package com.todoMaster.common.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,8 @@ import com.todoMaster.common.dto.request.PresignRequest;
 import com.todoMaster.common.dto.response.PresignResponse;
 import com.todoMaster.common.service.S3Service;
 import com.todoMaster.global.dto.ApiResponse;
+import com.todoMaster.global.exception.CustomException;
+import com.todoMaster.global.exception.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,5 +37,13 @@ public class CommonController {
         );
 
         return ResponseEntity.ok(response);
+    }
+	
+	@GetMapping("/error")
+    public ResponseEntity<?> getError() {
+
+        throw new CustomException(ErrorCode.UPDATE_FAILED);
+
+        //return ResponseEntity.ok("에러 호출");
     }
 }

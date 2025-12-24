@@ -8,6 +8,7 @@ import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
 import com.todoMaster.user.vo.UserInfoVO;
 
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -131,16 +132,22 @@ public class VerificationService {
     	UserInfoVO user = new UserInfoVO();
     	
     	// 1. 토큰 기본 검증
-		jwtProvider.validateToken(token);
+    	 if (!jwtProvider.validateToken(token)) {
+             throw new CustomException(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
+         }
 
+    	try {
+    		// 2. 토큰에서 이메일 / userId 꺼내기
+    		String email = jwtProvider.getEmail(token);
+    		Long userId = jwtProvider.getUserId(token);
+    		
+    		// 3. 꺼낸값 user에 저장
+    		user.setEmail(email);
+    		user.setUserId(userId);
+    	} catch (JwtException | IllegalArgumentException e) {
+    		throw new CustomException(ErrorCode.ACCOUNT_VERIFICATION_FAILED);
+		}    	 
     	
-    	// 2. 토큰에서 이메일 / userId 꺼내기
-		String email = jwtProvider.getEmail(token);
-		Long userId = jwtProvider.getUserId(token);
-		
-		// 3. 꺼낸값 user에 저장
-		user.setEmail(email);
-		user.setUserId(userId);
     	
     	return user;
     	

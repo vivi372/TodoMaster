@@ -108,13 +108,9 @@ public class JwtProvider {
 		try {
 			// 서명 키를 설정하고 토큰을 파싱하여 Claims(payload)를 추출 시도
 			Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-			return true; // 성공적으로 파싱되면 유효함
-		} catch (ExpiredJwtException e) {
-			// 만료
-			throw new CustomException(ErrorCode.EXPIRED_TOKEN);
-		} catch (JwtException | IllegalArgumentException e) {
-			// 서명불일치, 변조, 잘못된 토큰 등
-			throw new CustomException(ErrorCode.INVALID_TOKEN);
+			return true; // 성공적으로 파싱되면 유효함		
+		} catch (JwtException e) {			
+			return false;
 		}
 	}
 

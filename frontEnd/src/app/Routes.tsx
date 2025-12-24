@@ -11,6 +11,7 @@ import SocialRedirectPage from '@/pages/socialRedirect/SocialRedirectPage';
 import TermsPage from '@/pages/terms/TermsPage';
 import PrivacyPage from '@/pages/privacy/PrivacyPage';
 import VerifyPage from '@/pages/verify/VerifyPage';
+import ErrorPage from '@/pages/ErrorPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -37,6 +38,11 @@ const routes: RouteObject[] = [
     path: '/',
     // 루트 경로에 접근 시, 인증 상태에 따른 리디렉션 로직을 실행합니다.
     element: <RootRedirect />,
+  },
+  {
+    path: '/error',
+    // 루트 경로에 접근 시, 인증 상태에 따른 리디렉션 로직을 실행합니다.
+    element: <ErrorPage />,
   },
   {
     path: '/login',

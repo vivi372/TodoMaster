@@ -1,7 +1,7 @@
 ﻿import { useNavigate } from 'react-router-dom';
 
 // 🟢 1. Action Code 정의 (모든 가능한 액션을 명시적으로 나열)
-export type actionCode = 'REDIRECT_TO_LOGIN' | 'RELOAD_PAGE' | 'LOGOUT_AND_REDIRECT';
+export type actionCode = 'REDIRECT_TO_LOGIN' | 'RELOAD_PAGE' | 'LOGOUT_AND_REDIRECT' | 'NONE';
 
 /**
  * 메시징 정책에 명시된 특정 후속 조치(Action)를 실행하는 훅입니다.
@@ -32,6 +32,8 @@ export const useMessageActions = () => {
       // 로그아웃 후 로그인 페이지로 리다이렉션
       navigate('/login', { replace: true });
     },
+
+    NONE: () => {},
   };
 
   /**
@@ -39,6 +41,7 @@ export const useMessageActions = () => {
    * @param actionCode 실행할 액션 코드
    */
   const executeAction = (actionCode: string) => {
+    console.log(actionCode);
     // 타입 가드를 통해 유효한 Action Code인지 확인
     const action = actions[actionCode as actionCode];
 

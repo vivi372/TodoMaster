@@ -11,6 +11,8 @@ import com.todoMaster.auth.dto.response.LoginResponse;
 import com.todoMaster.auth.dto.response.SocialLoginResponse;
 import com.todoMaster.auth.service.AuthService;
 import com.todoMaster.global.dto.ApiResponse;
+import com.todoMaster.global.exception.CustomException;
+import com.todoMaster.global.exception.ErrorCode;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -53,14 +55,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
     }
     
-    // -------- 소셜 회원가입 --------
-    @PostMapping("/social/signup")
-    public ResponseEntity<?> socialSignup(
-            @Valid @RequestBody SocialSignupRequest req
-    ) {
-        Long userId = authService.socialSignup(req.getProvider(), req.getCode());
-        return ResponseEntity.ok(ApiResponse.success("소셜 회원가입 성공", userId));
-    }
 
     /**
      * 로그인 엔드포인트
@@ -167,7 +161,7 @@ public class AuthController {
                                          @CookieValue(name = "refreshToken", required = false) String refreshToken) {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("Invalid Authorization header");
+            throw new CustomException(ErrorCode.AUTHORIZATION_HEADER_MISSING);
         }
         String access = authHeader.substring(7);
         Long userId = authService.getUserIdFromAccessToken(access);
@@ -218,7 +212,7 @@ public class AuthController {
     	
     	// 헤더 인증부에 있는 토큰을 통해 userId 가져오기
     	if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("Invalid Authorization header");
+    		throw new CustomException(ErrorCode.AUTHORIZATION_HEADER_MISSING);
         }
         String access = authHeader.substring(7);
         Long userId = authService.getUserIdFromAccessToken(access);

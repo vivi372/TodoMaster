@@ -37,6 +37,8 @@ export const queryClient = new QueryClient({
     onError: async (error: unknown) => {
       const appError = parseAxiosError(error);
 
+      console.error(appError);
+
       const didExecuteAction = await handleServerError(appError);
 
       if (didExecuteAction) {
