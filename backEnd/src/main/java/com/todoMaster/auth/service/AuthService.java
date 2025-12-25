@@ -70,24 +70,7 @@ public class AuthService {
         		vo.getEmail(),
         		vo.getUserId(),
         		vo.getNickname()
-        	);
-        
-        // temp 경로의 있던 이미지 경로 이동
-        try {
-        	if (req.getProfileImg() != null) {
-        		String newProfileImage = "user/" + vo.getUserId() + "/profile.png";
-                s3Service.move(
-                		req.getProfileImg(),
-                		newProfileImage);
-                // 경로 이동 성공시 db READY로 업데이트
-                userMapper.updateProfileImage(vo.getUserId(),newProfileImage,"READY");    
-            }
-        } catch (CustomException e) {      
-        	// 경로 이동 실패시 db FAILED로 업데이트
-            log.warn("Profile image move failed. userId={}",vo.getUserId(), e);
-            userMapper.updateProfileImage(vo.getUserId(),vo.getProfileImg(),"FAILED");
-        }
-        
+        	);       
 
     }
     
@@ -108,6 +91,7 @@ public class AuthService {
     }
     
     // 계정 활성화 서비스 메서드
+    @Transactional
     public void accountActivation(String token) {
     	// 1. 토큰 검증
     	UserInfoVO tokenUser = verificationService.extractClaimsFromToken(token);
@@ -119,6 +103,22 @@ public class AuthService {
     	
     	// 3. 검증 후 계정 활성화
     	userMapper.accountActivation(tokenUser.getUserId());
+    	
+        // temp 경로의 있던 이미지 경로 이동
+        try {
+        	if (storeUser.getProfileImg() != null) {
+        		String newProfileImage = "user/" + storeUser.getUserId() + "/profile.png";
+                s3Service.move(
+                		storeUser.getProfileImg(),
+                		newProfileImage);
+                // 경로 이동 성공시 db READY로 업데이트
+                userMapper.updateProfileImage(storeUser.getUserId(),newProfileImage,"READY");    
+            }
+        } catch (CustomException e) {      
+        	// 경로 이동 실패시 db FAILED로 업데이트
+            log.warn("Profile image move failed. userId={}",storeUser.getUserId(), e);
+            userMapper.updateProfileImage(storeUser.getUserId(),storeUser.getProfileImg(),"FAILED");
+        }
 
     }
 
@@ -272,6 +272,25 @@ public class AuthService {
     	if (result == 0) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    // 인증 메일 재전송 서비스 메서드
+    public void passwordForgot(String email) {
+    	// 1. 이메일을 통해 계정 정보 가져오기
+    	UserInfoVO user = userMapper.selectUserForLogin(email);
+    	if (user == null) {
+    		log.error("비밀번호 재설정을 위한 계정을 찾을 수 없습니다.");
+    		return;
+    	} // 보안을 위해 예외는 안 던지고 로그만 찍기
+    	
+    	// 2. 사용자의 이메일로 인증 이메일 보내기
+    	// 사용자의 이메일로 인증 이메일 보내기
+        verificationService.createResetTokenAndSendEmail(
+        		user.getEmail(),
+        		user.getUserId(),
+        		user.getNickname()
+        	);
+
     }
     
     /**
