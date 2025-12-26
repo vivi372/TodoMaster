@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Eye, EyeOff, Mail, Lock, User, Check, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Label } from '@/shared/ui/label';
 import { Input } from '@/shared/ui/input';
 import { Checkbox } from '@/shared/ui/checkbox';
@@ -41,12 +41,13 @@ export function SignupForm() {
   // 회원가입이 성공적으로 완료되었지만 아직 인증이 안 된 상태
   const [isSignedUp, setIsSignedUp] = useState(false);
   // 커스텀 훅에서 서버 요청 함수와 상태 가져오기
-  const { signup, isLoading } = useSignup();
-  const { resend, resendIsLoading } = useAuth();
+  const { signup, isLoading: isSignupLoading } = useSignup();
+  const { resend, isLoading: isAuthLoading } = useAuth();
   // 커스텀 타이머 훅 사용
   const { isCounting, startTimer, timerText } = useTimer();
   // 커스텀 훅에서 모달 alert 관련 함수 가져오기
   const { alert } = useModal();
+  const navigate = useNavigate();
 
   // useForm 훅을 사용하여 폼 상태 및 메서드 초기화
   const {
@@ -153,6 +154,22 @@ export function SignupForm() {
     startTimer();
   };
 
+  // 카카오 로그인 인증 URL
+  const KAKAO_AUTH_URL =
+    `https://kauth.kakao.com/oauth/authorize` +
+    `?client_id=${import.meta.env.VITE_KAKAO_CLIENT_ID}` +
+    `&redirect_uri=${import.meta.env.VITE_KAKAO_OAUTH_REDIRECT_URI}` +
+    `&response_type=code` +
+    `&state=kakao`;
+  // 구글 로그인 인증 URL
+  const GOOGLE_AUTH_URL =
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}` +
+    `&redirect_uri=${import.meta.env.VITE_GOOGLE_OAUTH_REDIRECT_URI}` +
+    `&response_type=code` +
+    `&scope=profile email` +
+    `&state=google`;
+
   return (
     <motion.form
       onSubmit={handleSubmit(onSubmit)}
@@ -180,7 +197,7 @@ export function SignupForm() {
               // (선택 사항) 기존 사용자 프로필 URL이 있다면 여기에 전달
               defaultPreview="/images/default-profile.png"
               size="lg"
-              disabled={isLoading || isSignedUp}
+              disabled={isSignupLoading || isSignedUp}
             />
           )}
         />
@@ -209,7 +226,7 @@ export function SignupForm() {
             placeholder="이름을 입력해주세요"
             className="pl-10 h-12 bg-card border-border"
             {...register('nickname')}
-            disabled={isLoading || isSignedUp}
+            disabled={isSignupLoading || isSignedUp}
           />
         </div>
       </motion.div>
@@ -227,7 +244,7 @@ export function SignupForm() {
             className="pl-10 h-12 bg-card border-border"
             {...register('email')}
             autoComplete="off"
-            disabled={isLoading || isSignedUp}
+            disabled={isSignupLoading || isSignedUp}
           />
         </div>
       </motion.div>
@@ -245,7 +262,7 @@ export function SignupForm() {
             className="pl-10 pr-10 h-12 bg-card border-border"
             {...register('password')}
             autoComplete="new-password"
-            disabled={isLoading || isSignedUp}
+            disabled={isSignupLoading || isSignedUp}
           />
           <button
             type="button"
@@ -290,7 +307,7 @@ export function SignupForm() {
             }`}
             {...register('confirmPassword')}
             autoComplete="new-password"
-            disabled={isLoading || isSignedUp}
+            disabled={isSignupLoading || isSignedUp}
           />
           <button
             type="button"
@@ -311,33 +328,35 @@ export function SignupForm() {
           id="terms"
           checked={agreeTerms}
           onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
-          className="mt-0.5 border-muted-foreground
-                data-[state=checked]:bg-primary
-                data-[state=checked]:border-primary"
-          disabled={isLoading || isSignedUp}
+          // ... (기존 체크박스 클래스 유지)
         />
         <Label
           htmlFor="terms"
+          // text-sm, text-muted-foreground는 유지
+          // leading-relaxed는 모바일에서 너무 벌어질 경우 leading-normal 등으로 조정 고려
           className="text-sm text-muted-foreground cursor-pointer leading-relaxed"
         >
-          <Link
-            to="/terms"
-            className="text-foreground font-medium hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            이용약관
-          </Link>{' '}
-          및{' '}
-          <Link
-            to="/privacy"
-            className="text-foreground font-medium hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            개인정보처리방침
-          </Link>
-          에 동의합니다
+          {/* 전체 텍스트를 하나의 span으로 묶어 flex 컨테이너 내에서 텍스트 블록 역할을 명확히 합니다. */}
+          <span className="block">
+            <Link
+              to="/terms"
+              className="text-foreground font-medium hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              이용약관
+            </Link>{' '}
+            및{' '}
+            <Link
+              to="/privacy"
+              className="text-foreground font-medium hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              개인정보처리방침
+            </Link>
+            에 동의합니다
+          </span>
         </Label>
       </motion.div>
 
@@ -348,19 +367,19 @@ export function SignupForm() {
           <Button
             type="button"
             className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
-            disabled={isLoading || isCounting}
+            disabled={isSignupLoading || isCounting}
             onClick={handleResend}
           >
-            {resendIsLoading ? '전송 중...' : `인증 메일 재전송 ${timerText}`}
+            {isAuthLoading ? '전송 중...' : `인증 메일 재전송 ${timerText}`}
           </Button>
         ) : (
           // 상태 1: 회원가입 버튼 (기본)
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
-            disabled={isLoading || !agreeTerms}
+            disabled={isSignupLoading || !agreeTerms}
           >
-            {isLoading ? '가입 중...' : '회원가입'}
+            {isSignupLoading ? '가입 중...' : '회원가입'}
           </Button>
         )}
       </motion.div>
@@ -378,7 +397,12 @@ export function SignupForm() {
       {/* 소셜 로그인 버튼 블록 */}
       <motion.div className="grid grid-cols-2 gap-3" variants={itemVariants}>
         {/* ... (Google 버튼) */}
-        <Button type="button" variant="outline" className="h-12 bg-card hover:bg-accent">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 bg-card hover:bg-accent"
+          onClick={() => navigate(GOOGLE_AUTH_URL)}
+        >
           {/* ... (Google SVG) ... */}
           <GoogleIcon size={20} className="w-5 h-5 mr-2" />
           <span className="hidden sm:inline">Google로 계정 만들기</span>
@@ -389,9 +413,10 @@ export function SignupForm() {
           type="button"
           variant="default"
           className="h-12 !bg-kakao-yellow hover:!bg-[#FEE500]/90 text-black shadow-sm border border-transparent"
+          onClick={() => navigate(KAKAO_AUTH_URL)}
         >
           <KakaoIcon size={20} className="w-5 h-5 mr-2" />
-          <span className="hidden sm:inline">카카오로 로그인</span>
+          <span className="hidden sm:inline">카카오로 시작하기</span>
           <span className="sm:hidden">카카오</span>
         </Button>
       </motion.div>

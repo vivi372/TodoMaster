@@ -6,6 +6,8 @@ import type {
   signupRequest,
   ResendRequest,
   AccountActivationRequest,
+  PasswordForgotRequest,
+  PasswordResetRequest,
 } from './../types/authTypes';
 import type { ApiResponse } from '@/types/api';
 
@@ -129,7 +131,79 @@ export const authApi = {
   ): Promise<void> => {
     // 1. Axios를 사용하여 계정 활성화 API에 POST 요청을 보냅니다.
     const res = await api.post<ApiResponse<void>>(
-      `${authUrl}/verify`, // 계정 활성화 API 엔드포인트
+      `${authUrl}/account-activation`, // 계정 활성화 API 엔드포인트
+      payload,
+    );
+
+    // 2. 응답 데이터의 성공 여부 확인
+    // 서버에서 정의한 ApiResponse 구조의 'success' 필드가 false인 경우,
+    // 즉, HTTP 상태 코드가 200이라도 비즈니스 로직 상의 오류가 발생한 경우 처리합니다.
+    if (!res.data.success) {
+      // ApiResponse의 메시지 필드를 포함하여 오류를 발생시킵니다.
+      throw res.data;
+    }
+  },
+
+  /**
+   * 비밀번호 찾기 api
+   * * @param payload - 서버로 전송할 이메일
+   *   @throws {Error} - 서버 응답의 'success' 필드가 false일 경우, 응답 메시지를 포함한 오류 발생
+   */
+  passwordForgot: async (
+    payload: PasswordForgotRequest, // 비밀번호 찾기시 필요한 데이터 타입
+  ): Promise<void> => {
+    // 1. Axios를 사용하여 비밀번호 찾기 API에 POST 요청을 보냅니다.
+    const res = await api.post<ApiResponse<void>>(
+      `${authUrl}/password/forgot`, // 비밀번호 찾기 API 엔드포인트
+      payload,
+    );
+
+    // 2. 응답 데이터의 성공 여부 확인
+    // 서버에서 정의한 ApiResponse 구조의 'success' 필드가 false인 경우,
+    // 즉, HTTP 상태 코드가 200이라도 비즈니스 로직 상의 오류가 발생한 경우 처리합니다.
+    if (!res.data.success) {
+      // ApiResponse의 메시지 필드를 포함하여 오류를 발생시킵니다.
+      throw res.data;
+    }
+  },
+
+  /**
+   * 비밀번호 리셋 토큰 검증 api
+   * * @param resetToken - 서버로 전송할 리셋 토큰
+   * @throws {Error} - 서버 응답의 'success' 필드가 false일 경우, 응답 메시지를 포함한 오류 발생
+   */
+  validateResetToken: async (
+    resetToken: string | undefined, // 비밀번호 리셋 토큰 검증 요청 시 필요한 데이터 타입
+  ): Promise<void> => {
+    const payload = {
+      resetToken: resetToken,
+    };
+    // 1. Axios를 사용하여 비밀번호 리셋 토큰 검증 API에 POST 요청을 보냅니다.
+    const res = await api.post<ApiResponse<void>>(
+      `${authUrl}/password/reset/validation`, // 비밀번호 리셋 토큰 검증 API 엔드포인트
+      payload,
+    );
+
+    // 2. 응답 데이터의 성공 여부 확인
+    // 서버에서 정의한 ApiResponse 구조의 'success' 필드가 false인 경우,
+    // 즉, HTTP 상태 코드가 200이라도 비즈니스 로직 상의 오류가 발생한 경우 처리합니다.
+    if (!res.data.success) {
+      // ApiResponse의 메시지 필드를 포함하여 오류를 발생시킵니다.
+      throw res.data;
+    }
+  },
+
+  /**
+   * 비밀번호 재설정 api
+   * * @param payload - 서버로 전송할 비밀번호
+   *   @throws {Error} - 서버 응답의 'success' 필드가 false일 경우, 응답 메시지를 포함한 오류 발생
+   */
+  passwordReset: async (
+    payload: PasswordResetRequest, // 비밀번호 재설정시 필요한 데이터 타입
+  ): Promise<void> => {
+    // 1. Axios를 사용하여 비밀번호 찾기 API에 POST 요청을 보냅니다.
+    const res = await api.post<ApiResponse<void>>(
+      `${authUrl}/password/reset`, // 비밀번호 재설정 API 엔드포인트
       payload,
     );
 

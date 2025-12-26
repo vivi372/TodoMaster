@@ -3,16 +3,20 @@ package com.todoMaster.auth.controller;
 import com.todoMaster.auth.dto.request.AccountActivationRequest;
 import com.todoMaster.auth.dto.request.LoginRequest;
 import com.todoMaster.auth.dto.request.PasswordCheckRequest;
+import com.todoMaster.auth.dto.request.PasswordForgotRequest;
+import com.todoMaster.auth.dto.request.PasswordResetRequest;
 import com.todoMaster.auth.dto.request.ResendRequest;
 import com.todoMaster.auth.dto.request.SocialLoginRequest;
-import com.todoMaster.auth.dto.request.SocialSignupRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
+import com.todoMaster.auth.dto.request.ValidateResetTokenRequest;
 import com.todoMaster.auth.dto.response.LoginResponse;
 import com.todoMaster.auth.dto.response.SocialLoginResponse;
 import com.todoMaster.auth.service.AuthService;
+import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.global.dto.ApiResponse;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
+import com.todoMaster.user.vo.UserInfoVO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,7 @@ import org.springframework.http.HttpHeaders;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtProvider jwtProvider;
     
     
     @PostMapping("/signup")
@@ -48,9 +53,13 @@ public class AuthController {
     }
     
     // 계정 활성화
-    @PostMapping("/verify")
+    @PostMapping("/account-activation")
     public ResponseEntity<?> accountActivation(@RequestBody @Valid AccountActivationRequest req) {
-    	authService.accountActivation(req.getToken());    	
+    	// 토큰 검증후 userId와 이메일 꺼내오기
+    	UserInfoVO tokenUser = jwtProvider.extractClaimsFromVerificationToken(req.getToken());
+    	
+    	// 계정 활성화
+    	authService.accountActivation(tokenUser);    	
     	
         return ResponseEntity.ok(ApiResponse.success("회원가입 완료"));
     }
@@ -184,42 +193,43 @@ public class AuthController {
     }
     
     /**
-     * 비밀번호 초기화 나중에 이메일을 통해 임시 비밀번호 지급
-     * @param email
-     * @return 임시 비밀번호
+     * 비밀번호 찾기(받은 이메일로 비밀번호 재설정 페이지 링크 보내기)
      */
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(String email) {
-        String tempPassword = authService.resetPassword(email);
-        
-        ApiResponse<String> response = ApiResponse.success(
-        		"임시 비밀번호 발급 완료"
-        		, tempPassword
-        );
-        
-        return ResponseEntity.ok(response);
+    @PostMapping("/password/forgot")
+    public ResponseEntity<?> passwordForgot(@Valid @RequestBody PasswordForgotRequest req) {
+    	authService.passwordForgot(req.getEmail());
+    	
+    	return ResponseEntity.ok(ApiResponse.success("이메일 전송 완료"));
     }
     
     /**
-     * 비밀번호 검증 api
-     * @param request
-     * @return
+     * 리셋 토큰 검증
      */
-    @PostMapping("/check-password")
-    public ResponseEntity<?> checkPassword(
-    		@RequestHeader(name = "Authorization", required = false) String authHeader,
-    		@Valid @RequestBody PasswordCheckRequest request) {
+    @PostMapping("/password/reset/validation")
+    public ResponseEntity<?> validateResetToken(@RequestBody ValidateResetTokenRequest req) {
+    	// 토큰 검증후 userId와 이메일 꺼내오기
+    	UserInfoVO tokenUser = jwtProvider.extractClaimsFromVerificationToken(req.getResetToken());
     	
-    	// 헤더 인증부에 있는 토큰을 통해 userId 가져오기
-    	if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-    		throw new CustomException(ErrorCode.AUTHORIZATION_HEADER_MISSING);
-        }
-        String access = authHeader.substring(7);
-        Long userId = authService.getUserIdFromAccessToken(access);
-
-        authService.checkPassword(userId, request.getPassword());
-
-        return ResponseEntity.ok(ApiResponse.success("비밀번호 확인 완료"));
+    	authService.validateResetToken(tokenUser);
+    	
+    	return ResponseEntity.ok(ApiResponse.success("리셋 토큰 검증 완료"));
+    }
+    
+    /**
+     * 비밀번호 초기화
+     * @param req
+     */
+    @PostMapping("/password/reset")
+    public ResponseEntity<?> passwordReset(@Valid @RequestBody PasswordResetRequest req) {
+    	// 토큰 검증후 userId와 이메일 꺼내오기
+    	UserInfoVO user = jwtProvider.extractClaimsFromVerificationToken(req.getResetToken());
+    	// 요청 받은 비밀번호 저장
+    	user.setPassword(req.getPassword());
+    	
+        authService.passwordReset(user);
+       
+        
+        return ResponseEntity.ok(ApiResponse.success("비밀번호 재설정 완료"));
     }
 
 }

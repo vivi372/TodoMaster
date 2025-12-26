@@ -35,8 +35,8 @@ export function ModalProvider() {
     // 1. Store의 handleClose 실행 (Promise resolve, 모달 닫기)
     handleModalClose(true);
 
-    // 2. Action이 있고, 모달 타입이 confirm일 때만 실행
-    if (modalData?.action && modalData.type === 'confirm') {
+    // 2. Action이 있을때만 실행
+    if (modalData?.action) {
       executeAction(modalData.action); // 🟢 액션 실행
     }
   };
@@ -45,7 +45,7 @@ export function ModalProvider() {
     ModalToRender = AlertModal;
     // Alert은 onOk만 필요하며, onOk는 handleClose(true)로 연결
     handlerProps = {
-      onOk: () => handleModalClose(true),
+      onOk: handleConfirmAction,
     };
   } else if (type === 'confirm') {
     ModalToRender = ConfirmModal;

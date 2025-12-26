@@ -138,15 +138,16 @@ public enum ErrorCode {
         ErrorDisplayType.TOAST,
         ErrorAction.NONE
     ),
-    ACCOUNT_VERIFICATION_FAILED(
-        HttpStatus.FORBIDDEN, // 403 Forbidden: 접근 권한(인증)이 유효하지 않아 거부됨
-        "계정 활성화에 실패했습니다.", 
-        "인증 토큰이 유효하지 않거나 만료되었습니다. 인증 메일을 재전송하여 다시 시도해 주세요.",
-        false, // silent: false
-        ErrorType.ERROR, // 토큰 오류는 시스템/보안 문제로 간주
-        ErrorDisplayType.ALERT_MODAL, // 명확한 고지 및 해결책 제시를 위해 Alert 모달 사용
-        ErrorAction.NONE
-    ),
+    TOKEN_AUTHENTICATION_FAILED(
+	    HttpStatus.FORBIDDEN, // 403 Forbidden: 접근 권한이 유효하지 않아 거부됨
+	    "링크가 유효하지 않습니다.",
+	    "링크 정보가 유효하지 않거나 만료되었습니다. 메일을 재전송하여 다시 시도해 주세요.",
+	    false, 
+	    ErrorType.ERROR,
+	    ErrorDisplayType.ALERT_MODAL, 
+	    ErrorAction.REDIRECT_TO_HOME
+	),
+    
 
     // ====================================================================================
     // 👤 회원 (MEMBER)
@@ -180,15 +181,15 @@ public enum ErrorCode {
         ErrorDisplayType.TOAST,
         ErrorAction.NONE
     ),
-    VERIFICATION_ACCOUNT_MISSING(
-        HttpStatus.INTERNAL_SERVER_ERROR, 
-        "인증할 계정을 찾을 수 없습니다.", 
-        "인증 토큰의 정보와 일치하는 계정을 찾을 수 없습니다. 이미 계정이 삭제되었거나, 시스템 오류가 발생했을 수 있습니다. 문제가 지속될 경우 고객센터로 문의해 주세요.",
-        false, // silent: false
-        ErrorType.ERROR, // type: 'error' (시스템/데이터 불일치로 간주)
-        ErrorDisplayType.ALERT_MODAL, // 사용자에게 명확하고 확실하게 고지
-        ErrorAction.NONE
-    ),
+    TARGET_USER_NOT_FOUND(
+	    HttpStatus.NOT_FOUND, // 404 Not Found (INTERNAL_SERVER_ERROR 대신 404가 더 정확)
+	    "사용자 정보를 찾을 수 없습니다.",
+	    "제공된 정보와 일치하는 사용자 계정을 찾을 수 없습니다. 이미 계정이 삭제되었거나, 시스템 오류가 발생했을 수 있습니다.",
+	    false, 
+	    ErrorType.ERROR, 
+	    ErrorDisplayType.ALERT_MODAL, 
+	    ErrorAction.REDIRECT_TO_HOME
+	),
     
     // 토스트 (Toast) 필요 (즉시 피드백)
     USER_NOT_FOUND(
@@ -198,6 +199,19 @@ public enum ErrorCode {
         false, // silent: false
         ErrorType.WARNING, // type: 'warning'
         ErrorDisplayType.TOAST,
+        ErrorAction.NONE
+    ),
+    USER_NOT_FOUND_FOR_RESET(
+        // 🔴 중요: 이 코드는 GlobalExceptionHandler에서 잡지 않고, 
+        // 서비스 레이어의 비밀번호 찾기 로직에서만 잡아서 처리해야 합니다.
+        // 최종 응답은 보안을 위해 HTTP 200 OK로 나갑니다.
+        
+        HttpStatus.NOT_FOUND, 
+        "비밀번호 재설정을 위한 계정을 찾을 수 없습니다.", 
+        "", // description 비워둠
+        true, // silent: true (보안상의 이유로 사용자에게 직접 토스트/모달을 띄우지 않습니다.)
+        ErrorType.WARNING, // type: 'warning' (시스템 오류가 아닌, 사용자 입력 부재)
+        ErrorDisplayType.TOAST, // silent=true 이므로 실질적으로 의미 없음
         ErrorAction.NONE
     ),
     INVALID_PASSWORD(
@@ -217,7 +231,7 @@ public enum ErrorCode {
         ErrorType.WARNING, // type: 'warning'
         ErrorDisplayType.TOAST,
         ErrorAction.NONE
-    ),
+    ),      
     
     // 모달 (Modal) 필요 (데이터 지속성 및 안정성 관련 치명적 오류)
     UPDATE_FAILED(
@@ -228,7 +242,29 @@ public enum ErrorCode {
         ErrorType.ERROR, // type: 'error'
         ErrorDisplayType.CONFIRM_MODAL, // displayType: 'modal', ModalType: 'confirm'
         ErrorAction.REDIRECT_TO_LOGIN // action: 'REDIRECT_TO_LOGIN'
-    );
+    ),
+	
+	// 비밀번호 찾기 시 카카오 소셜 계정 에러 정의
+	SOCIAL_KAKAO_USER_CANNOT_RESET_PASSWORD(
+	    HttpStatus.BAD_REQUEST, 
+	    "이 계정은 카카오 계정입니다. 카카오 로그인 버튼을 이용해 주세요.", 
+	    "", 
+	    false, 
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.TOAST, 
+	    ErrorAction.NONE 
+	),
+
+	// 비밀번호 찾기 시 구글 소셜 계정 에러 정의
+	SOCIAL_GOOGLE_USER_CANNOT_RESET_PASSWORD(
+	    HttpStatus.BAD_REQUEST, 
+	    "이 계정은 구글 계정입니다. 구글 로그인 버튼을 이용해 주세요.", 
+	    "", 
+	    false, 
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.TOAST, 
+	    ErrorAction.NONE 
+	);
 
 
     private final HttpStatus status;

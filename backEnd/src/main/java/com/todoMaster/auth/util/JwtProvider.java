@@ -2,11 +2,14 @@ package com.todoMaster.auth.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
+import com.todoMaster.user.vo.UserInfoVO;
 
 import java.security.Key;
 import java.time.Instant;
@@ -17,6 +20,7 @@ import java.util.Date;
  * Secret Key를 사용하여 토큰을 서명하고 검증합니다.
  */
 @Component
+@Slf4j
 public class JwtProvider {
 
 	// 토큰 서명에 사용되는 Secret Key
@@ -150,4 +154,34 @@ public class JwtProvider {
 			throw new CustomException(ErrorCode.INVALID_TOKEN);
 		}
 	}
+	
+	/**
+	 *  특수 목적 토큰 (Verification / Reset) 관련 로직
+	 * @param token
+	 * @return
+	 */	
+	public UserInfoVO extractClaimsFromVerificationToken(String token) {
+		UserInfoVO user = new UserInfoVO();
+    	
+    	// 1. 토큰 기본 검증
+    	 if (!validateToken(token)) {
+             throw new CustomException(ErrorCode.TOKEN_AUTHENTICATION_FAILED);
+         }
+
+    	try {
+    		// 2. 토큰에서 이메일 / userId 꺼내기
+    		String email = getEmail(token);
+    		Long userId = getUserId(token);
+    		
+    		// 3. 꺼낸값 user에 저장
+    		user.setEmail(email);
+    		user.setUserId(userId);
+    	} catch (JwtException | IllegalArgumentException e) {
+    		throw new CustomException(ErrorCode.TOKEN_AUTHENTICATION_FAILED);
+		}    	 
+    	
+    	
+    	return user;
+    	
+    }	
 }

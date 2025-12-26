@@ -12,7 +12,10 @@ public enum ErrorAction {
 	RELOAD_PAGE("RELOAD_PAGE"),
 	
 	/** 로그아웃 처리 후 로그인 페이지로 이동 */
-	LOGOUT_AND_REDIRECT("LOGOUT_AND_REDIRECT");
+	LOGOUT_AND_REDIRECT("LOGOUT_AND_REDIRECT"),
+	
+	/** 홈 페이지로 리다이렉션 */
+	REDIRECT_TO_HOME("REDIRECT_TO_HOME");
 	
 	private final String value;
 	

@@ -24,8 +24,8 @@ public interface UserMapper {
     // 계정 활성화
     int accountActivation(Long userId);
 
-    // 이메일로 유저 조회 (로그인)
-    UserInfoVO selectUserForLogin(String email);
+    // 이메일로 인증된 유저 조회
+    UserInfoVO selectVerifiedUser(String email);
     
     // 이메일로 유저 조회
     UserInfoVO selectUser(String email);

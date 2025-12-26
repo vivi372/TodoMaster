@@ -2,6 +2,7 @@ package com.todoMaster.auth.service;
 
 import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.request.LoginRequest;
+import com.todoMaster.auth.dto.request.PasswordResetRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.auth.util.TokenHashUtil;
@@ -92,16 +93,13 @@ public class AuthService {
     
     // 계정 활성화 서비스 메서드
     @Transactional
-    public void accountActivation(String token) {
-    	// 1. 토큰 검증
-    	UserInfoVO tokenUser = verificationService.extractClaimsFromToken(token);
-    	// 새로운 에러 필요
+    public void accountActivation(UserInfoVO tokenUser) {   	
     	
-    	// 2. 이메일 / userId DB에 존재하는지 조회
+    	// 1. 이메일 / userId DB에 존재하는지 조회
     	UserInfoVO storeUser = userMapper.selectUnverifiedUser(tokenUser.getUserId(),tokenUser.getEmail());
-    	if (storeUser == null) throw new CustomException(ErrorCode.VERIFICATION_ACCOUNT_MISSING); // 새로운 에러 필요
+    	if (storeUser == null) throw new CustomException(ErrorCode.TARGET_USER_NOT_FOUND); 
     	
-    	// 3. 검증 후 계정 활성화
+    	// 2. 검증 후 계정 활성화
     	userMapper.accountActivation(tokenUser.getUserId());
     	
         // temp 경로의 있던 이미지 경로 이동
@@ -128,7 +126,7 @@ public class AuthService {
      */
     public String login(LoginRequest req) {
         // 이메일로 사용자 조회
-        UserInfoVO user = userMapper.selectUserForLogin(req.getEmail());
+        UserInfoVO user = userMapper.selectVerifiedUser(req.getEmail());
         if (user == null) throw new CustomException(ErrorCode.USER_NOT_FOUND);
 
         // 비밀번호 검증
@@ -277,11 +275,21 @@ public class AuthService {
     // 인증 메일 재전송 서비스 메서드
     public void passwordForgot(String email) {
     	// 1. 이메일을 통해 계정 정보 가져오기
-    	UserInfoVO user = userMapper.selectUserForLogin(email);
+    	UserInfoVO user = userMapper.selectVerifiedUser(email);
     	if (user == null) {
     		log.error("비밀번호 재설정을 위한 계정을 찾을 수 없습니다.");
     		return;
     	} // 보안을 위해 예외는 안 던지고 로그만 찍기
+    	
+    	// 소셜 유저일경우 비밀번호 찾기 차단
+    	String provider = user.getProvider();
+    	if (provider != null) {
+    		log.info(provider+"");
+    		if(provider.equals("google")) throw new CustomException(ErrorCode.SOCIAL_GOOGLE_USER_CANNOT_RESET_PASSWORD);
+    		if(provider.equals("kakao")) throw new CustomException(ErrorCode.SOCIAL_KAKAO_USER_CANNOT_RESET_PASSWORD);
+    	}
+    	
+    	log.info(user+"");
     	
     	// 2. 사용자의 이메일로 인증 이메일 보내기
     	// 사용자의 이메일로 인증 이메일 보내기
@@ -293,47 +301,31 @@ public class AuthService {
 
     }
     
-    /**
-     * 비밀번호 초기화
-     * @param email
-     * @return 임시 비밀번호
-     */
-    public String resetPassword(String email) {
-
-        UserInfoVO user = userMapper.selectUserForLogin(email);
-        if (user == null)
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        
-        // UUID를 통해서 임시 비밀번호 생성
-        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
-        
-        // DB에 저장을 위해 비밀번호 인코딩
-        String encodePassword = passwordEncoder.encode(tempPassword);
-       
-        // 임시 비밀번호 DB에 저장
-        userMapper.updatePassword(user.getUserId(), encodePassword);
-
-        return tempPassword;
+    // 비밀번호 리셋 토큰 검증
+    public void validateResetToken(UserInfoVO tokenUser) {   	
+    	
+    	// 이메일 / userId DB에 존재하는지 조회
+    	UserInfoVO storeUser = userMapper.selectVerifiedUser(tokenUser.getEmail());
+    	if (storeUser == null || storeUser.getUserId() != tokenUser.getUserId()) {
+    		throw new CustomException(ErrorCode.TARGET_USER_NOT_FOUND);	
+    	}
     }
     
     /**
-     * 
-     * @param userId
-     * @param rawPassword
+     * 비밀번호 재설정
+     * @param user
      */
-    public void checkPassword(Long userId, String rawPassword) {
+    public void passwordReset(UserInfoVO user) {
 
-        UserInfoVO user = userMapper.findById(userId);
-
-        if (user == null) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        // BCrypt 기반 비교
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new CustomException(ErrorCode.PASSWORD_NOT_MATCH);
-        }
-    }  
+       // validateResetToken에서 DB에서 토큰 검증해서 여기서는 검증 x
+        
+        // DB에 저장을 위해 비밀번호 인코딩
+        String encodePassword = passwordEncoder.encode(user.getPassword());
+       
+        // 임시 비밀번호 DB에 저장
+        userMapper.updatePassword(user.getUserId(), encodePassword);
+        
+    }
     
 
     /**

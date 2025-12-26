@@ -71,7 +71,7 @@ export async function handleServerError(appError: AppError): Promise<boolean> {
 
     await modalStore.showAlert({
       ...modalProps,
-      // Alert 모달은 확인 버튼만 있으므로 action을 전달하지 않아도 됨
+      action: policy.action, // Action Code 전달
     });
     // Alert은 액션을 실행하지 않으므로 actionExecuted = false
   }

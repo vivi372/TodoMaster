@@ -134,11 +134,11 @@ export function ImageCropModal({
           </p>
         </ModalBody>
         <ModalFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            취소
-          </Button>
           <Button onClick={handleFinalCrop} disabled={isLoading || !croppedAreaPixels}>
             {isLoading ? '처리 중...' : '확인 및 저장'}
+          </Button>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            취소
           </Button>
         </ModalFooter>
       </ModalContent>

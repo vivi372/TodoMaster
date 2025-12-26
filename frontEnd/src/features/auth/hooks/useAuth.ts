@@ -47,6 +47,24 @@ export const useAuth = () => {
     mutationFn: authApi.accountActivation,
   });
 
+  // 비밀번호 찾기 Mutation 정의
+  const passwordForgotMutation = useMutation({
+    // 실제 서버 요청을 담당하는 함수 (payload를 인자로 받음)
+    mutationFn: authApi.passwordForgot,
+  });
+
+  // 비밀번호 리셋 토큰 검증 Mutation 정의
+  const validateResetTokenMutation = useMutation({
+    // 실제 서버 요청을 담당하는 함수 (resetToken를 인자로 받음)
+    mutationFn: authApi.validateResetToken,
+  });
+
+  // 비밀번호 재설정 Mutation 정의
+  const passwordResetMutation = useMutation({
+    // 실제 서버 요청을 담당하는 함수 (payload를 인자로 받음)
+    mutationFn: authApi.passwordReset,
+  });
+
   // 4. 컴포넌트에서 사용할 기능과 상태를 반환합니다.
   return {
     // mutate 함수를 login이라는 이름으로 반환하여 컴포넌트에서 쉽게 호출할 수 있게 합니다.
@@ -61,13 +79,23 @@ export const useAuth = () => {
     // 계정 활성화 mutateAsync 함수를 반환합니다
     accountActivation: accountActivationMutation.mutateAsync,
 
-    // 두 로그인 요청 중 하나라도 진행 중이면 true를 반환하는 통합 로딩 상태
+    //  비밀번호 찾기 mutateAsync 함수를 반환합니다
+    passwordForgot: passwordForgotMutation.mutateAsync,
+
+    //  비밀번호 리셋 토큰 검증 mutateAsync 함수를 반환합니다
+    validateResetToken: validateResetTokenMutation.mutateAsync,
+
+    //  비밀번호 재설정 mutateAsync 함수를 반환합니다
+    passwordReset: passwordResetMutation.mutateAsync,
+
+    // 요청 중 하나라도 진행 중이면 true를 반환하는 통합 로딩 상태
     isLoading:
       loginMutation.isPending || // 일반 로그인 로딩 상태
-      socialLoginMutation.isPending, // 소셜 로그인 로딩 상태
-
-    resendIsLoading: resendVerificationEmailMutation.isPending,
-
-    accountActivationIsLoading: accountActivationMutation.isPending,
+      socialLoginMutation.isPending ||
+      resendVerificationEmailMutation.isPending ||
+      accountActivationMutation.isPending ||
+      passwordForgotMutation.isPending ||
+      passwordResetMutation.isPending ||
+      validateResetTokenMutation.isPending,
   };
 };

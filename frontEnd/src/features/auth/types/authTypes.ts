@@ -16,6 +16,15 @@ export interface AccountActivationRequest {
   token: string;
 }
 
+export interface PasswordForgotRequest {
+  email: string;
+}
+
+export interface PasswordResetRequest {
+  password: string;
+  resetToken: string | undefined;
+}
+
 export interface signupRequest {
   email: string;
   password: string;

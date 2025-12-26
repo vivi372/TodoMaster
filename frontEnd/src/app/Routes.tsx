@@ -12,6 +12,8 @@ import TermsPage from '@/pages/terms/TermsPage';
 import PrivacyPage from '@/pages/privacy/PrivacyPage';
 import VerifyPage from '@/pages/verify/VerifyPage';
 import ErrorPage from '@/pages/ErrorPage';
+import ForgotPasswordPage from '@/pages/forgotPassword/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/resetPassword/ResetPasswordPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -61,6 +63,19 @@ const routes: RouteObject[] = [
         <SignupPage />
       </GuestGuard>
     ),
+  },
+  {
+    path: '/forgot-password',
+    element: (
+      // GuestGuard: 이미 로그인 상태라면 이 페이지 대신 /todos로 리디렉션합니다.
+      <GuestGuard>
+        <ForgotPasswordPage />
+      </GuestGuard>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
   },
   {
     path: '/terms',
