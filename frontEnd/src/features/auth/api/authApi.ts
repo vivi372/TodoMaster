@@ -1,4 +1,4 @@
-﻿import { api } from '@/lib/api/axios';
+﻿import { api } from '@/shared/lib/api/axios';
 import type {
   LoginRequest,
   SocialLoginRequest,
@@ -9,7 +9,7 @@ import type {
   PasswordForgotRequest,
   PasswordResetRequest,
 } from './../types/authTypes';
-import type { ApiResponse } from '@/types/api';
+import type { ApiResponse } from '@/shared/types/api';
 
 const authUrl = '/api/auth';
 

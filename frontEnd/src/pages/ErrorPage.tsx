@@ -1,5 +1,5 @@
-﻿import { api } from '@/lib/api/axios';
-import type { ApiResponse } from '@/types/api';
+﻿import { api } from '@/shared/lib/api/axios';
+import type { ApiResponse } from '@/shared/types/api';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
 

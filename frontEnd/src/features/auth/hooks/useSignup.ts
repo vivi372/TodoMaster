@@ -1,7 +1,7 @@
 ﻿import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
 import { commonApi } from '@/shared/api/commonApi';
-import { uploadToS3 } from '@/lib/utils/uploadToS3';
+import { uploadToS3 } from '@/shared/lib/utils/uploadToS3';
 
 /**
  * useSignup 커스텀 훅:

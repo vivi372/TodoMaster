@@ -1,6 +1,6 @@
 ﻿import * as React from 'react';
 import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/lib/utils';
 import { Button } from './button'; // Button 컴포넌트는 사용자의 환경에 맞게 조정하세요.
 
 // ====================================================================
