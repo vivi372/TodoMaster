@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { ToastProvider } from './shared/ui/ToastProvider';
+import { ToastProvider } from './app/providers/ToastProvider';
 import { authApi } from './features/auth/api/authApi';
 import { authStore } from './features/auth/store/authStore';
 import AppRoutes from './app/Routes';
 import { BrowserRouter } from 'react-router-dom';
 import './styles/globals.css';
 import 'react-easy-crop/react-easy-crop.css';
-import { ModalProvider } from './shared/ui/ModalProvider';
+import { ModalProvider } from './app/providers/ModalProvider';
 
 function App() {
   useEffect(() => {

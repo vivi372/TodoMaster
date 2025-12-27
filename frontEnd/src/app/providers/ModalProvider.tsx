@@ -1,6 +1,6 @@
-﻿import { useMessageActions } from '../hooks/useMessageActions';
-import { useModalStore } from '../store/modalStore';
-import { AlertModal, ConfirmModal } from './modal'; // Modal.tsx에서 정의된 ConfirmModal
+﻿import { useMessageActions } from '../../shared/hooks/useMessageActions';
+import { useModalStore } from '../../shared/store/modalStore';
+import { AlertModal, ConfirmModal } from '../../shared/ui/modal'; // Modal.tsx에서 정의된 ConfirmModal
 import { useShallow } from 'zustand/react/shallow';
 
 /**

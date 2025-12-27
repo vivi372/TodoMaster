@@ -36,9 +36,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-              <HaruLog />
-            </div>
+            <HaruLog />
+
             <span className="text-3xl font-bold text-foreground">하루로그</span>
           </div>
         </div>
@@ -81,9 +80,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-md">
-              <HaruLog />
-            </div>
+            <HaruLog />
             <span className="text-2xl font-bold text-foreground">하루로그</span>
           </div>
 
