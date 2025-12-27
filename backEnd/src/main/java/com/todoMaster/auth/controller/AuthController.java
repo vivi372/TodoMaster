@@ -222,11 +222,9 @@ public class AuthController {
     @PostMapping("/password/reset")
     public ResponseEntity<?> passwordReset(@Valid @RequestBody PasswordResetRequest req) {
     	// 토큰 검증후 userId와 이메일 꺼내오기
-    	UserInfoVO user = jwtProvider.extractClaimsFromVerificationToken(req.getResetToken());
-    	// 요청 받은 비밀번호 저장
-    	user.setPassword(req.getPassword());
+    	UserInfoVO user = jwtProvider.extractClaimsFromVerificationToken(req.getResetToken());    	
     	
-        authService.passwordReset(user);
+        authService.passwordReset(user,req.getPassword());
        
         
         return ResponseEntity.ok(ApiResponse.success("비밀번호 재설정 완료"));

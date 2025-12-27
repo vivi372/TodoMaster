@@ -224,13 +224,13 @@ public enum ErrorCode {
         ErrorAction.NONE
     ),
     SAME_PASSWORD_NOT_ALLOWED(
-        HttpStatus.BAD_REQUEST, 
-        "기존 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.", 
-        "",
-        false, // silent: false
-        ErrorType.WARNING, // type: 'warning'
-        ErrorDisplayType.TOAST,
-        ErrorAction.NONE
+		HttpStatus.BAD_REQUEST, 
+	    "새 비밀번호는 기존 비밀번호와 달라야 합니다.", 
+	    "", 
+	    false, 
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.ALERT_MODAL, // 중요 정보이므로 모달을 권장
+	    ErrorAction.NONE
     ),      
     
     // 모달 (Modal) 필요 (데이터 지속성 및 안정성 관련 치명적 오류)

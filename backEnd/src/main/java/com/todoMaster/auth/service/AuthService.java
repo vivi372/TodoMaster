@@ -315,9 +315,18 @@ public class AuthService {
      * 비밀번호 재설정
      * @param user
      */
-    public void passwordReset(UserInfoVO user) {
+    public void passwordReset(UserInfoVO user, String newRawPassword) {
 
-       // validateResetToken에서 DB에서 토큰 검증해서 여기서는 검증 x
+    	// validateResetToken에서 DB에서 토큰 검증해서 여기서는 검증 x
+    	
+    	
+    	// 기존 비밀번호와 동일한지 검증
+    	user = userMapper.selectVerifiedUser(user.getEmail());
+    	
+        if (passwordEncoder.matches(newRawPassword, user.getPassword())) {
+            // 에러 발생: 새로운 비밀번호가 필요함을 알림
+            throw new CustomException(ErrorCode.SAME_PASSWORD_NOT_ALLOWED); 
+        }
         
         // DB에 저장을 위해 비밀번호 인코딩
         String encodePassword = passwordEncoder.encode(user.getPassword());
