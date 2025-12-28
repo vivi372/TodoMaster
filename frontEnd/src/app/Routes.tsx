@@ -1,4 +1,4 @@
-﻿import { Navigate, type RouteObject, useRoutes } from 'react-router-dom';
+﻿import { Navigate, Outlet, type RouteObject, useRoutes } from 'react-router-dom';
 
 import LoginPage from '@/pages/login/LoginPage'; // 로그인 페이지 컴포넌트
 import SignupPage from '@/pages/signup/SignupPage'; // 회원가입 페이지 컴포넌트
@@ -14,6 +14,7 @@ import VerifyPage from '@/pages/verify/VerifyPage';
 import ErrorPage from '@/pages/ErrorPage';
 import ForgotPasswordPage from '@/pages/forgotPassword/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/resetPassword/ResetPasswordPage';
+import { AppLayout } from '@/layouts/AppLayout';
 
 /**
  * RootRedirect 컴포넌트:
@@ -99,14 +100,14 @@ const routes: RouteObject[] = [
     ),
   },
   {
-    path: '/todos',
     element: (
-      // AuthGuard: 비로그인 상태라면 이 페이지 대신 /login으로 리디렉션합니다.
-      // 로그인 사용자만 TodoPage에 접근 가능합니다.
       <AuthGuard>
-        <TodoPage />
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
       </AuthGuard>
     ),
+    children: [{ path: '/todos', element: <TodoPage /> }],
   },
   {
     // path: '*',
