@@ -328,7 +328,12 @@ export function SignupForm() {
           id="terms"
           checked={agreeTerms}
           onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
-          // ... (기존 체크박스 클래스 유지)
+          className="
+                border-muted-foreground
+                data-[state=checked]:bg-primary
+                data-[state=checked]:border-primary
+                 my-auto
+              "
         />
         <Label
           htmlFor="terms"

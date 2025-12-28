@@ -3,7 +3,7 @@ package com.todoMaster.user.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.todoMaster.user.dto.UserUpdateRequest;
+import com.todoMaster.user.dto.request.UserUpdateRequest;
 import com.todoMaster.user.vo.UserInfoVO;
 
 @Mapper

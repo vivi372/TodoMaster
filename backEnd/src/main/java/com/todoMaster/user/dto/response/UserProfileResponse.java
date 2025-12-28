@@ -1,4 +1,4 @@
-package com.todoMaster.user.dto;
+package com.todoMaster.user.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

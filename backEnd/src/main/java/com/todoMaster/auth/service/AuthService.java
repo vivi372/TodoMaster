@@ -51,7 +51,8 @@ public class AuthService {
         vo.setEmail(req.getEmail());
         vo.setPassword(passwordEncoder.encode(req.getPassword()));
         vo.setNickname(req.getNickname());
-        vo.setProfileImg(req.getProfileImg());
+        // 소셜 계정의 이미지 경로와 구분을 위해 S3: 추가
+        vo.setProfileImg("S3:"+req.getProfileImg());
         vo.setIsVerified("UNVERIFIED"); // 이메일 인증 전에는 UNVERIFIED으로 저장
         
         if(vo.getProfileImg() != null) {
@@ -105,12 +106,13 @@ public class AuthService {
         // temp 경로의 있던 이미지 경로 이동
         try {
         	if (storeUser.getProfileImg() != null) {
-        		String newProfileImage = "user/" + storeUser.getUserId() + "/profile.png";
+        		String newProfileImage = "S3:user/" + storeUser.getUserId() + "/profile.png";
                 s3Service.move(
-                		storeUser.getProfileImg(),
+                		storeUser.getProfileImg(), // S3에는 키에 S3:가 없으므로 제거
                 		newProfileImage);
                 // 경로 이동 성공시 db READY로 업데이트
-                userMapper.updateProfileImage(storeUser.getUserId(),newProfileImage,"READY");    
+                // 소셜 계정의 이미지 경로와 구분을 위해 S3: 추가
+                userMapper.updateProfileImage(storeUser.getUserId(),"S3:"+newProfileImage,"READY");    
             }
         } catch (CustomException e) {      
         	// 경로 이동 실패시 db FAILED로 업데이트

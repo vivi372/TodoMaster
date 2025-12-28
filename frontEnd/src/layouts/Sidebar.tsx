@@ -6,9 +6,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import type { MenuItem } from './getMenu';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export function Sidebar({ menu }: { menu: MenuItem[] }) {
   const location = useLocation();
+  // useAuth에서 로그아웃 함수 가져오기
+  const { logout } = useAuth();
 
   // location 객체에서 pathname 속성 추출
   const pathname = location.pathname;
@@ -85,6 +88,7 @@ export function Sidebar({ menu }: { menu: MenuItem[] }) {
             'w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10',
             collapsed && 'justify-center',
           )}
+          onClick={() => logout()}
         >
           <LogOut className="h-5 w-5" />
           {!collapsed && <span className="ml-3">로그아웃</span>}

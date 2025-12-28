@@ -26,7 +26,7 @@ public class CommonController {
 	@PostMapping("/files/presign")
     public ResponseEntity<?> getPresignedUrl(@RequestBody PresignRequest request) {
 
-        var result = s3Service.generatePresignedUrl(
+        var result = s3Service.generatePutUrl(
                 request.getDirectory(),
                 request.getContentType()
         );

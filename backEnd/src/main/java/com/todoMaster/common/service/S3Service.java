@@ -17,7 +17,10 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 /**
@@ -44,7 +47,7 @@ public class S3Service {
      * @param contentType 업로드할 파일의 MIME 타입 (예: "image/jpeg", "application/pdf")
      * @return 생성된 URL과 S3 객체 키를 포함하는 PresignResult 레코드
      */
-    public PresignResult generatePresignedUrl(String directory, String contentType) {
+    public PresignResult generatePutUrl(String directory, String contentType) {
     	
         // 1. 고유한 파일 이름 생성: 파일명 중복을 피하기 위해 UUID를 사용합니다.
         String fileName = UUID.randomUUID().toString();
@@ -83,13 +86,42 @@ public class S3Service {
     }
     
     /**
-     * S3 객체 이동
+     * 오브젝트 키(key)에 대해 만료 시간이 설정된 GET 요청용 Presigned URL을 생성합니다.
+     * 이 URL을 가진 사람은 해당 만료 시간 동안 S3에 직접 접근하여 객체를 다운로드하거나 조회할 수 있습니다.
      *
+     * @param key S3 버킷 내의 파일 경로 및 이름
+     * @return 생성된 Presigned URL 문자열
+     */
+    public String generateGetUrl(String key) {
+        // 1. S3 GetObject 요청 객체 생성 (어떤 객체에 접근할지 정의)
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket) // 접근할 S3 버킷 이름 설정
+                .key(key)       // 접근할 객체의 키(경로) 설정
+                .build();
+
+        // 2. Presign 요청 객체 생성 (Presigned URL의 조건 정의)
+        GetObjectPresignRequest presignRequest =
+                GetObjectPresignRequest.builder()
+                        // 서명 유효 시간 설정: 5분 동안 유효한 URL을 생성
+                        .signatureDuration(Duration.ofMinutes(5))                        
+                        // 1단계에서 만든 GetObjectRequest 객체를 포함시킵니다.
+                        .getObjectRequest(getObjectRequest)
+                        .build();
+
+        // 3. Presigner를 사용하여 최종 Presigned URL 요청 객체 생성
+        PresignedGetObjectRequest presignedRequest =
+        		s3Presigner.presignGetObject(presignRequest);
+
+        // 4. 생성된 Presigned URL의 문자열 형태를 반환
+        return presignedRequest.url().toString();
+    }
+    
+    /**
+     * S3 객체 이동
      * S3에는 move API가 없으므로
      * 1. copy
      * 2. delete
      * 순서로 처리
-     *
      * @param sourceKey 이동할 원본 object key
      * @param targetKey 이동될 object key
      */
@@ -119,6 +151,29 @@ public class S3Service {
             // 사용자에게는 내부 처리 실패로만 전달
             throw new CustomException(ErrorCode.FILE_MOVE_FAILED);
 		}
+    }
+    
+    /**
+     * 문자열의 가장 앞에 있는 "S3:" 접두사를 제거합니다.
+     * @param originalString 원본 문자열
+     * @return 접두사가 제거된 문자열. 접두사가 없으면 원본 문자열을 반환합니다.
+     */
+    public String removeS3Prefix(String originalString) {
+        if (originalString == null || originalString.isEmpty()) {
+            return originalString; // null 또는 빈 문자열은 그대로 반환
+        }
+
+        final String prefix = "S3:";
+        
+        // 1. 문자열이 "S3:"로 시작하는지 확인
+        if (originalString.startsWith(prefix)) {
+            // 2. 접두사("S3:")의 길이만큼 잘라내고 나머지 문자열을 반환
+            // prefix.length() = 3
+            return originalString.substring(prefix.length());
+        }
+
+        // 3. 접두사가 없으면 원본 문자열 그대로 반환
+        return originalString;
     }
 
     /**

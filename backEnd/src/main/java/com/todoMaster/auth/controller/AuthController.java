@@ -134,9 +134,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null) throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
-        
-        log.info(refreshToken);
-        
+                
         String combined = authService.refresh(refreshToken);
         String[] parts = combined.split("::", 2);
         String access = parts[0];

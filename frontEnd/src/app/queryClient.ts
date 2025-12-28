@@ -1,5 +1,4 @@
 ﻿import { parseAxiosError } from '@/shared/api/parseAxiosError';
-import { appToast } from '@/shared/utils/appToast';
 import { handleServerError } from '@/shared/utils/handleServerError';
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 
@@ -18,13 +17,17 @@ export const queryClient = new QueryClient({
    * ------------------------------
    */
   queryCache: new QueryCache({
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : '데이터를 불러오는 중 오류가 발생했습니다.';
+    onError: async (error: unknown) => {
+      const appError = parseAxiosError(error);
 
-      appToast.error({
-        message,
-      });
+      console.error(appError);
+
+      const didExecuteAction = await handleServerError(appError);
+
+      if (didExecuteAction) {
+        // 액션이 실행(페이지 이동 등)되었다면 추가 로직 불필요
+        return;
+      }
     },
   }),
 

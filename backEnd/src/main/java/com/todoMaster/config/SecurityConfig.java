@@ -1,11 +1,17 @@
 package com.todoMaster.config;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.todoMaster.auth.filter.JwtAuthenticationEntryPoint;
 import com.todoMaster.auth.filter.JwtAuthenticationFilter;
@@ -38,12 +44,14 @@ public class SecurityConfig {
 
         // 2. HTTP 보안 설정을 구성합니다.
         http
-            // 2-1. CSRF (Cross-Site Request Forgery) 보호 기능을 비활성화합니다.
+        	// 2-1. CORS 설정을 활성화합니다.
+        	.cors(Customizer.withDefaults())
+            // 2-2. CSRF (Cross-Site Request Forgery) 보호 기능을 비활성화합니다.
             // REST API 서버에서는 세션을 사용하지 않으므로 CSRF가 필요하지 않습니다.
             .csrf(cs -> cs.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
-            // 2-2. HTTP 요청에 대한 인가(Authorization) 규칙을 설정합니다.
+            // 2-3. HTTP 요청에 대한 인가(Authorization) 규칙을 설정합니다.
             .authorizeHttpRequests(auth -> auth
                 // '/api/auth/'로 시작하는 모든 요청 (로그인, 토큰 갱신 등)은 인증 없이 허용합니다.
                 .requestMatchers("/api/auth/**").permitAll()
@@ -55,23 +63,35 @@ public class SecurityConfig {
                 .anyRequest().permitAll()
             )
             
-            // 2-3. 커스텀 JWT 필터를 등록합니다.
+            // 2-4. 커스텀 JWT 필터를 등록합니다.
             // UsernamePasswordAuthenticationFilter(기본 폼 로그인 처리 필터) 이전에 실행되도록 설정하여,
             // 매 요청마다 JWT를 검증하고 인증 정보를 Security Context에 설정합니다.
             .addFilterBefore(jwtFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             
-            // 2-4. HTTP Basic 인증 메커니즘을 비활성화합니다. (JWT 방식 사용)
+            // 2-5. HTTP Basic 인증 메커니즘을 비활성화합니다. (JWT 방식 사용)
             .httpBasic(b -> b.disable())
             
-            // 2-5. 기본 Form Login 메커니즘을 비활성화합니다. (JWT 방식 사용)
+            // 2-6. 기본 Form Login 메커니즘을 비활성화합니다. (JWT 방식 사용)
             .formLogin(f -> f.disable());
 
         // 3. 설정된 내용으로 SecurityFilterChain을 빌드하고 반환합니다.
         return http.build();
     }
     
-    // 참고: JWT 기반 인증에서는 세션을 사용하지 않으므로 sessionManagement 설정을 추가하는 것이 일반적입니다.
-    /*
-    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-    */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // WebConfig에서 설정했던 내용과 동일하게 구성
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); 
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // 또는 특정 헤더 (Content-Type, Authorization 등) 명시
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // long 타입으로 지정
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 모든 경로에 적용
+        return source;
+    }
+   
 }

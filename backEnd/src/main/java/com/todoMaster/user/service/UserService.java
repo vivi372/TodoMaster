@@ -9,9 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
 import com.todoMaster.global.s3.S3Uploader;
-import com.todoMaster.user.dto.ChangePasswordRequest;
-import com.todoMaster.user.dto.UserProfileResponse;
-import com.todoMaster.user.dto.UserUpdateRequest;
+import com.todoMaster.user.dto.request.ChangePasswordRequest;
+import com.todoMaster.user.dto.request.UserUpdateRequest;
+import com.todoMaster.user.dto.response.UserProfileResponse;
+import com.todoMaster.user.dto.response.UserSummaryProfileResponse;
 import com.todoMaster.user.mapper.UserMapper;
 import com.todoMaster.user.vo.UserInfoVO;
 
@@ -99,6 +100,22 @@ public class UserService {
     }
     
     @Transactional(readOnly = true)
+    public UserSummaryProfileResponse getSummaryMyInfo() {
+        Long userId = getCurrentUserId();
+
+        UserInfoVO user = userMapper.findById(userId);
+
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return UserSummaryProfileResponse.builder()
+                .nickname(user.getNickname())
+                .profileImg(user.getProfileImg())
+                .build();
+    }
+    
+    @Transactional(readOnly = true)
     public UserProfileResponse getMyInfo() {
         Long userId = getCurrentUserId();
 
@@ -156,8 +173,6 @@ public class UserService {
 
     /**
      * SecurityContext에서 현재 인증된 사용자 ID를 꺼낸다.
-     * - JwtAuthenticationFilter에서 principal을 userId로 넣어두었으면 그대로 Long으로 캐스팅 가능.
-     * - 프로젝트에 따라 principal 타입이 다르면 이 부분을 조정해야 한다.
      */
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

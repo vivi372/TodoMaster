@@ -1,15 +1,44 @@
-﻿import { useMutation } from '@tanstack/react-query';
+﻿import {
+  useMutation,
+  useQueryClient,
+  type UseMutateAsyncFunction,
+  type UseMutateFunction,
+} from '@tanstack/react-query';
 import { authStore } from '../store/authStore';
 import { authApi } from '../api/authApi';
+import type {
+  AccountActivationRequest,
+  AuthResponse,
+  LoginRequest,
+  PasswordResetRequest,
+  ResendRequest,
+  SocialLoginRequest,
+} from '../types/authTypes';
+
+// 훅의 반환 타입을 정의합니다.
+export interface UseAuthResult {
+  login: UseMutateFunction<AuthResponse, Error, LoginRequest, unknown>;
+  socialLogin: UseMutateAsyncFunction<AuthResponse, Error, SocialLoginRequest, unknown>;
+  logout: UseMutateAsyncFunction<void, Error, void, unknown>;
+  resend: UseMutateAsyncFunction<void, Error, ResendRequest, unknown>;
+  accountActivation: UseMutateAsyncFunction<void, Error, AccountActivationRequest, unknown>;
+  passwordForgot: UseMutateAsyncFunction<void, Error, ResendRequest, unknown>;
+  validateResetToken: UseMutateAsyncFunction<void, Error, string | undefined, unknown>;
+  passwordReset: UseMutateAsyncFunction<void, Error, PasswordResetRequest, unknown>;
+  isLoading: boolean;
+}
 
 /**
  * useAuth 커스텀 훅:
  * 일반 로그인 및 소셜 로그인 비동기 요청을 처리하고,
  * 성공 시 Access Token을 전역 상태 스토어에 저장하는 로직을 통합합니다.
  */
-export const useAuth = () => {
-  // 1. Zustand 스토어에서 Access Token을 저장하는 액션(setAccessToken)만 가져옵니다.
+export const useAuth = (): UseAuthResult => {
+  // 1. Zustand 스토어에서 Access Token을 저장하는 액션과 로그아웃 액션 가져오기
   const setAccessToken = authStore.getState().setAccessToken;
+  const logout = authStore.getState().logout;
+
+  const queryClient = useQueryClient();
 
   // 일반 로그인 Mutation 정의
   const loginMutation = useMutation({
@@ -32,6 +61,20 @@ export const useAuth = () => {
     // 소셜 로그인 성공 시에도 동일하게 Access Token을 저장합니다.
     onSuccess: (data) => {
       setAccessToken(data.accessToken);
+    },
+  });
+
+  // 로그아웃 Mutation 정의
+  const logoutMutation = useMutation({
+    mutationFn: authApi.logout,
+
+    onSuccess: () => {
+      // 성공 후 auth에 있는 토큰 삭제 및 인증 여부 상태 변경
+      logout();
+
+      // 사용자 관련 캐시 제거
+      queryClient.removeQueries({ queryKey: ['myProfile'] });
+      queryClient.removeQueries({ queryKey: ['headerProfile'] });
     },
   });
 
@@ -73,6 +116,9 @@ export const useAuth = () => {
     // 소셜 로그인 mutateAsync 함수를 반환합니다.
     socialLogin: socialLoginMutation.mutateAsync,
 
+    // 소셜 로그인 mutateAsync 함수를 반환합니다.
+    logout: logoutMutation.mutateAsync,
+
     // 인증 이메일 재전송 mutateAsync 함수를 반환합니다
     resend: resendVerificationEmailMutation.mutateAsync,
 
@@ -96,6 +142,7 @@ export const useAuth = () => {
       accountActivationMutation.isPending ||
       passwordForgotMutation.isPending ||
       passwordResetMutation.isPending ||
-      validateResetTokenMutation.isPending,
+      validateResetTokenMutation.isPending ||
+      logoutMutation.isPending,
   };
 };
