@@ -21,21 +21,33 @@ export const formatDateTime = (date: Date | string): string => {
   });
 };
 
-// yyyy-mm-dd 로만 변환
 /**
- * Date 객체 또는 날짜 문자열을 'yyyy-mm-dd' 형태의 ISO 표준 날짜 문자열로 변환합니다.
- * (시간 정보는 제거됩니다.)
- *
+ * Date 객체 또는 날짜 문자열을 'YYYY.MM.DD' 형태의 문자열로 변환합니다.
+ * (시간 정보는 제거되고 로컬 시간 기준으로 포맷됩니다.)
  * @param date 변환할 Date 객체 또는 날짜 문자열
- * @returns 'yyyy-mm-dd' 형식의 날짜 문자열
+ * @returns 'YYYY.MM.DD' 형식의 날짜 문자열
  */
 export const formatDate = (date: Date | string): string => {
   // 1. 입력이 문자열인 경우 Date 객체로 변환합니다.
   const d = typeof date === 'string' ? new Date(date) : date;
 
-  // 2. toISOString()으로 ISO 8601 형식 ('YYYY-MM-DDTHH:mm:ss.sssZ') 문자열을 얻습니다.
-  // 3. split("T")[0]을 사용하여 T를 기준으로 문자열을 분리하고, 날짜 부분(배열의 첫 번째 요소)만 반환합니다.
-  return d.toISOString().split('T')[0];
+  // 2. Date 객체가 유효한지 확인합니다.
+  if (isNaN(d.getTime())) {
+    return 'Invalid Date';
+  }
+
+  // 3. 연도, 월, 일을 로컬 시간 기준으로 가져옵니다.
+  const year = d.getFullYear();
+
+  // getMonth()는 0부터 시작하므로 1을 더합니다.
+  // padStart(2, '0')를 사용하여 항상 두 자리 숫자로 만듭니다. (예: 1월 -> 01)
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+
+  // padStart(2, '0')를 사용하여 항상 두 자리 숫자로 만듭니다. (예: 5일 -> 05)
+  const day = String(d.getDate()).padStart(2, '0');
+
+  // 4. 'YYYY.MM.DD' 형식으로 조합하여 반환합니다.
+  return `${year}.${month}.${day}`;
 };
 
 // Date 옵션 쉽게 만들기

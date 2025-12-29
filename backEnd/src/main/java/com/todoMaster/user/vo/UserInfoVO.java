@@ -1,5 +1,7 @@
 package com.todoMaster.user.vo;
 
+import java.time.LocalDate;
+
 import lombok.Data;
 
 /**
@@ -30,7 +32,7 @@ public class UserInfoVO {
     // 해싱된 리프레쉬 토큰
     private String refreshToken;
     // 가입일
-    private String createdAt;
+    private LocalDate createdAt;
     // 수정일
     private String updatedAt;
 }

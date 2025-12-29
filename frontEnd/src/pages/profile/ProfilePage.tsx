@@ -6,6 +6,9 @@ import { Separator } from '@radix-ui/react-dropdown-menu';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useModal, type BaseModalData } from '@/shared/store/modalStore';
 import { useDeleteAccount } from '@/features/user/hooks/useDeleteAccount';
+import { useProfileQuery } from '@/features/user/hooks/useProfileQuery';
+import { LoadingDots } from '@/shared/ui/loading/LoadingDots';
+import { formatDate } from '@/shared/lib/utils/date';
 
 export default function ProfilePage() {
   // useAuth 훅에서 로그아웃 함수 가져오기
@@ -14,18 +17,8 @@ export default function ProfilePage() {
   const { confirm, alert } = useModal();
   // useDeleteAccount 훅에서 회원탈퇴 함수 가져오기
   const { mutate: deleteAccount } = useDeleteAccount();
-
-  const user = {
-    name: '김투두',
-    email: 'user@example.com',
-    profileImage: '/abstract-profile.png',
-    joinDate: '2024.01.15',
-    stats: {
-      totalTodos: 127,
-      completedTodos: 98,
-      categories: 8,
-    },
-  };
+  // useProfileQuery 통해서 유저 프로필 가져오기
+  const { data: profile, isLoading } = useProfileQuery();
 
   // deleteAccount시 onSuccess 콜백
   const handleSuccess = async () => {
@@ -59,8 +52,18 @@ export default function ProfilePage() {
     }
   };
 
+  if (isLoading) return <LoadingDots fullscreen={true} />;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* 이미지 상태가 FAILED이거나 CONFIRM일때만 경고 고지 */}
+      {(profile?.profileImageStatus == 'FAILED' || profile?.profileImageStatus == 'CONFIRM') && (
+        <div className="p-3 bg-red-100 text-yellow-800 border border-red-300 rounded-md mb-4 text-sm font-medium text-center">
+          고객님의 현재 프로필 이미지 파일이 서버에 임시로만 저장된 상태입니다. <br />
+          영구 저장에 실패하여, 며칠 내로 해당 임시 파일이 자동 삭제될 위험이 있습니다. 프로필
+          변경을 시도해 주세요.
+        </div>
+      )}
       {/* 프로필 헤더 */}
       <Card className="p-6 lg:p-8">
         <div className="flex flex-col lg:flex-row items-center gap-6">
@@ -68,8 +71,8 @@ export default function ProfilePage() {
           <div className="relative">
             <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full overflow-hidden border-4 border-primary/20">
               <img
-                src={user.profileImage || '/placeholder.svg'}
-                alt={user.name}
+                src={profile?.profileImg ?? '/images/default-profile.png'}
+                alt={profile?.nickname}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -78,29 +81,29 @@ export default function ProfilePage() {
           {/* 사용자 정보 */}
           <div className="flex-1 text-center lg:text-left space-y-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{user.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{profile?.nickname}</h1>
               <p className="text-muted-foreground flex items-center justify-center lg:justify-start gap-2 mt-2">
                 <Mail className="w-4 h-4" />
-                {user.email}
+                {profile?.email ?? '이메일을 등록하고 알림을 받아보세요'}
               </p>
-              <p className="text-muted-foreground flex items-center justify-center lg:justify-start gap-2 mt-1">
+              <p className="text-muted-foreground flex items-center justify-center lg:justify-start gap-2 mt-2">
                 <Calendar className="w-4 h-4" />
-                가입일: {user.joinDate}
+                가입일: {profile?.createdAt ? formatDate(profile?.createdAt) : ''}
               </p>
             </div>
 
             {/* 통계 */}
             <div className="flex gap-6 justify-center lg:justify-start">
               <div className="text-center">
-                <p className="text-2xl font-bold text-primary">{user.stats.totalTodos}</p>
+                <p className="text-2xl font-bold text-primary">{profile?.totalTodos}</p>
                 <p className="text-sm text-muted-foreground">전체 투두</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{user.stats.completedTodos}</p>
+                <p className="text-2xl font-bold text-green-600">{profile?.completedTodos}</p>
                 <p className="text-sm text-muted-foreground">완료</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{user.stats.categories}</p>
+                <p className="text-2xl font-bold text-blue-600">{profile?.categories}</p>
                 <p className="text-sm text-muted-foreground">카테고리</p>
               </div>
             </div>
@@ -126,41 +129,58 @@ export default function ProfilePage() {
         </div>
       </Card>
 
+      {/* | 항목      | LOCAL     | KAKAO | GOOGLE |
+          | ------- | --------- | ----- | ------------ |
+          | 닉네임 변경  | O         | O     | O            |
+          | 프로필 이미지 | O         | O     | O            |
+          | 비밀번호 변경 | O         | ❌ 숨김  | ❌ 숨김         |
+          | 이메일 표시  | O (읽기 전용) | O(존재 할때만)  | O (읽기 전용)    | 
+          | 이메일 변경  | O         | O     | ❌            | // 카카오로 이메일 변경할때는 카카오 재인증 통해 2단계 인증 진행
+          | 회원 탈퇴   | O         | O     | O            |
+      */}
+
       {/* 계정 설정 */}
       <Card className="p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Shield className="w-5 h-5" />
           계정 설정
         </h2>
-
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 hover:bg-accent/50 px-4 rounded-lg transition-colors">
-            <div>
-              <p className="font-medium">이메일 변경</p>
-              <p className="text-sm text-muted-foreground">
-                보안을 위해 비밀번호와 이메일 인증이 필요합니다
-              </p>
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/profile/change-email">변경</Link>
-            </Button>
-          </div>
+          {profile?.provider != 'google' && (
+            <>
+              <div className="flex items-center justify-between py-3 hover:bg-accent/50 px-4 rounded-lg transition-colors">
+                <div>
+                  <p className="font-medium">이메일 변경</p>
+                  <p className="text-sm text-muted-foreground">
+                    보안을 위해 2단계 인증이 필요합니다
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/profile/change-email">변경</Link>
+                </Button>
+              </div>
 
-          <Separator />
+              <Separator />
+            </>
+          )}
 
-          <div className="flex items-center justify-between py-3 hover:bg-accent/50 px-4 rounded-lg transition-colors">
-            <div>
-              <p className="font-medium">비밀번호 변경</p>
-              <p className="text-sm text-muted-foreground">
-                계정 보안을 위해 정기적으로 변경하세요
-              </p>
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/profile/change-password">변경</Link>
-            </Button>
-          </div>
+          {profile?.provider == null && (
+            <>
+              <div className="flex items-center justify-between py-3 hover:bg-accent/50 px-4 rounded-lg transition-colors">
+                <div>
+                  <p className="font-medium">비밀번호 변경</p>
+                  <p className="text-sm text-muted-foreground">
+                    계정 보안을 위해 정기적으로 변경하세요
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/profile/change-password">변경</Link>
+                </Button>
+              </div>
 
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           <div className="flex items-center justify-between py-3 hover:bg-accent/50 px-4 rounded-lg transition-colors">
             <div>
@@ -186,18 +206,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </Card>
-
-      {/* 회원 탈퇴 확인 모달 */}
-      {/* <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="정말 탈퇴하시겠습니까?"
-        description="모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다."
-        variant="error"
-        onConfirm={handleDeleteAccount}
-        confirmText="탈퇴하기"
-        cancelText="취소"
-      /> */}
     </div>
   );
 }

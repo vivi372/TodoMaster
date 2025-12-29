@@ -95,11 +95,25 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo() {
+    	// db에서 프로필 정보 조회
+    	UserProfileResponse profile = userService.getMyInfo();
     	
-    	 ApiResponse<UserProfileResponse> response = ApiResponse.success(
-         		"회원 정보 가져오기 성공"
-         		, userService.getMyInfo()
-         );
+    	// 프로필 이미지의 저장위치가 S3일 경우 Presigned URL 생성
+    	if(profile.getProfileImg().startsWith("S3:")) {
+    		// 1. S3 안에 오브젝트 키와 맞추기 위해 S3: 제거
+    		String objectKey = s3Service.removeS3Prefix(profile.getProfileImg());
+    		
+    		// 2. 오브젝트 키를 통해 presignedUrl 생성
+    		String presignedUrl = s3Service.generateGetUrl(objectKey);
+    		
+    		// 3. 생성된 presignedUrl를 UserSummaryProfileResponse에 저장
+    		profile.setProfileImg(presignedUrl);
+    	}
+    	
+    	ApiResponse<UserProfileResponse> response = ApiResponse.success(
+         	"회원 정보 가져오기 성공"
+         	, profile
+        );
     	
         return ResponseEntity.ok(response);
     }   

@@ -149,11 +149,15 @@ public class UserService {
         }
 
         return UserProfileResponse.builder()
-                .userId(user.getUserId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .profileImg(user.getProfileImg())
+                .profileImageStatus(user.getProfileImageStatus())
                 .provider(user.getProvider())
+                .createdAt(user.getCreatedAt())
+                .totalTodos(0L) // after) totalTodos / completedTodos / categories는 투두 구현전이라서 하드코딩
+                .completedTodos(0L)
+                .categories(0)
                 .build();
     }
     

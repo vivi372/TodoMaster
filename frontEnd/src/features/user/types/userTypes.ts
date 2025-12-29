@@ -5,9 +5,13 @@
 }
 
 export interface UserProfileResponse {
-  userId: string;
   email: string;
   nickname: string;
   profileImg: string;
+  profileImageStatus: string;
+  createdAt: string;
   provider: string;
+  totalTodos: number;
+  completedTodos: number;
+  categories: number;
 }

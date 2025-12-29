@@ -29,7 +29,7 @@ export const useProfileQuery = (): ProfileQueryResult => {
     // 3. staleTime: 데이터가 신선함을 유지하는 시간 설정
     // 1000 * 60 * 5 = 300000ms, 즉 5분으로 설정
     // 5분이 지나면 데이터는 '오래된(stale)' 상태가 되어 다음 이벤트 시점에 재요청됩니다.
-    staleTime: 1000 * 60 * 5, // 5분
+    staleTime: 1000 * 60 * 4, // 5분
     // 인증 상태가 true일 때만 이 쿼리를 실행합니다.
     enabled: isAuthenticated,
   });

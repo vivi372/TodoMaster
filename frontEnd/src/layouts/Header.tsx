@@ -23,7 +23,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
-  // useUser을 통해서 유저 프로필 가져오기
+  // useHeaderProfile을 통해서 헤더 유저 프로필 가져오기
   const { data: headerProfile, isLoading } = useHeaderProfile();
   // useAuth에서 로그아웃 함수 가져오기
   const { logout } = useAuth();
