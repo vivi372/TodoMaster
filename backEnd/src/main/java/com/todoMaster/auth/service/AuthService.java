@@ -159,6 +159,7 @@ public class AuthService {
         if (updated == 0) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+        
 
         return access + "::" + refresh;
     }
@@ -259,6 +260,8 @@ public class AuthService {
         if (result == 0) {                
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+        
+       
 
         return newAccess + "::" + newRefresh;
     }

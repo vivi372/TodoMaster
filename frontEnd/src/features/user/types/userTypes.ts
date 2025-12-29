@@ -1,6 +1,7 @@
 ﻿export interface UserSummaryProfileResponse {
   nickname: string;
   profileImg: string;
+  imageWarningShown: boolean;
 }
 
 export interface UserProfileResponse {

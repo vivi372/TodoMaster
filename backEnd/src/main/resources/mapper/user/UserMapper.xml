@@ -124,6 +124,14 @@
 		UPDATED_AT = SYSDATE
 		WHERE USER_ID = #{userId}
 	</update>
+	
+	<!-- 프로필 이미지 상태 수정 -->
+	<update id="updateProfileImageStatus">
+		UPDATE USER_INFO
+		SET PROFILE_IMAGE_STATUS = #{profileImageStatus},
+		UPDATED_AT = SYSDATE
+		WHERE USER_ID = #{userId}
+	</update>
 
 	<!-- 회원 탈퇴 -->
 	<delete id="deleteUser">

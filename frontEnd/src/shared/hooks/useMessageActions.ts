@@ -1,4 +1,5 @@
-﻿import { useNavigate } from 'react-router-dom';
+﻿import { useAcknowledgeImageWarning } from '@/features/user/hooks/useAcknowledgeImageWarning';
+import { useNavigate } from 'react-router-dom';
 
 // 🟢 1. Action Code 정의 (모든 가능한 액션을 명시적으로 나열)
 export type actionCode =
@@ -6,6 +7,7 @@ export type actionCode =
   | 'RELOAD_PAGE'
   | 'LOGOUT_AND_REDIRECT'
   | 'REDIRECT_TO_HOME'
+  | 'SET_WARNING_SHOWN'
   | 'NONE';
 
 /**
@@ -15,6 +17,7 @@ export type actionCode =
 export const useMessageActions = () => {
   // 라우팅 액션을 위해 useNavigate 훅 사용
   const navigate = useNavigate();
+  const { mutate: acknowledgeImageWarning } = useAcknowledgeImageWarning();
 
   // 🟢 2. Action Code와 실제 실행 함수를 매핑하는 객체
   const actions: Record<actionCode, () => void> = {
@@ -42,6 +45,11 @@ export const useMessageActions = () => {
     REDIRECT_TO_HOME: () => {
       // 홈 페이지로 리다이렉션
       navigate('/', { replace: true });
+    },
+
+    // isImageWarningShown false로 변경
+    SET_WARNING_SHOWN: () => {
+      acknowledgeImageWarning();
     },
 
     NONE: () => {},

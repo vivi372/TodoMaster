@@ -10,9 +10,11 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { useUser } from '@/features/user/hooks/useUser';
+import { useHeaderProfile } from '@/features/user/hooks/useHeaderProfile';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useEffect } from 'react';
+import { useModalStore, type BaseModalData } from '@/shared/store/modalStore';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -20,9 +22,30 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   // useUser을 통해서 유저 프로필 가져오기
-  const { headerProfile, isLoading } = useUser();
+  const { data: headerProfile, isLoading } = useHeaderProfile();
   // useAuth에서 로그아웃 함수 가져오기
   const { logout } = useAuth();
+
+  useEffect(() => {
+    if (isLoading == false) {
+      console.log(headerProfile);
+      // 데이터에서 이미지 오류 경고 여부 가져오기
+      const isImageWarningShown: boolean | undefined = headerProfile?.imageWarningShown;
+
+      console.log(isImageWarningShown);
+      // true일때 경고 모달 출력
+      if (isImageWarningShown) {
+        const modalProps: BaseModalData = {
+          title: '프로필 이미지 유실 위험 알림',
+          description:
+            '고객님의 현재 프로필 이미지 파일이 서버에 임시로만 저장된 상태입니다. 영구 저장에 실패하여, 며칠 내로 해당 임시 파일이 자동 삭제될 위험이 있습니다. 프로필에서 프로필 변경을 시도해 주세요.',
+          variant: 'warning',
+          action: 'SET_WARNING_SHOWN',
+        };
+        useModalStore.getState().showAlert(modalProps);
+      }
+    }
+  }, [headerProfile, isLoading]);
 
   return (
     <header className="h-16 bg-white border-b border-border sticky top-0 z-40">

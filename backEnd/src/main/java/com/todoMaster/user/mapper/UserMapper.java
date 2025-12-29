@@ -51,6 +51,10 @@ public interface UserMapper {
             @Param("profileImg") String profileImg, 
             @Param("profileImageStatus") String profileImageStatus);
     
+    // 프로필 이미지 상태 수정
+    int updateProfileImageStatus(@Param("userId") Long userId,
+            @Param("profileImageStatus") String profileImageStatus);
+    
     // 회원 탈퇴
     int deleteUser(Long userId);
 }

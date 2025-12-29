@@ -2,7 +2,7 @@
 import type { actionCode } from '../hooks/useMessageActions';
 
 // ConfirmModalProps에서 버튼/핸들러 관련 속성들을 제외한 순수 데이터 타입
-type BaseModalData = {
+export type BaseModalData = {
   title: string;
   description: React.ReactNode;
   confirmText?: string;

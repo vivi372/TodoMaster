@@ -17,4 +17,6 @@ public class UserSummaryProfileResponse {
     private String nickname;    
     // 프로필 이미지 URL
     private String profileImg;    
+    // 이미지 오류 경고 여부
+    private boolean isImageWarningShown;
 }

@@ -108,11 +108,34 @@ public class UserService {
         if (user == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
-
+        
+        boolean isImageWarningShown = false;
+        
+        // 이미지 오류 경고 여부 확인
+        // 프로필 이미지 상태가 FAILED 경우에만 경고 출력(최초 1회만)
+        if(user.getProfileImageStatus().equals("FAILED")) {
+        	isImageWarningShown = true;
+        }
+        
         return UserSummaryProfileResponse.builder()
                 .nickname(user.getNickname())
                 .profileImg(user.getProfileImg())
+                .isImageWarningShown(isImageWarningShown)
                 .build();
+    }
+    
+    @Transactional
+    public void acknowledgeImageWarning() {
+    	// 1. userId 가져오기
+        Long userId = getCurrentUserId();    
+        // 2. profileImageStatus를 CONFIRM(오류 확인 상태)로 설정
+        String profileImageStatus = "CONFIRM";
+        // 3. DB 수정
+        int updated = userMapper.updateProfileImageStatus(userId, profileImageStatus);
+        if (updated == 0) {
+            throw new CustomException(ErrorCode.UPDATE_FAILED);
+        }
+        
     }
     
     @Transactional(readOnly = true)
