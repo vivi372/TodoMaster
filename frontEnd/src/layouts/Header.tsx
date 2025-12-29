@@ -15,12 +15,14 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useEffect } from 'react';
 import { useModalStore, type BaseModalData } from '@/shared/store/modalStore';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const navigate = useNavigate();
   // useUser을 통해서 유저 프로필 가져오기
   const { data: headerProfile, isLoading } = useHeaderProfile();
   // useAuth에서 로그아웃 함수 가져오기
@@ -102,14 +104,14 @@ export function Header({ onMenuClick }: HeaderProps) {
                     </AvatarFallback>
                   </Avatar>
                   <span className="hidden md:block text-sm font-medium">
-                    {headerProfile?.nickname ?? '홍길동'}
+                    {headerProfile?.nickname ?? ''}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>내 계정</DropdownMenuLabel>
+                <DropdownMenuLabel>{headerProfile?.nickname ?? ''}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>프로필</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>프로필</DropdownMenuItem>
                 <DropdownMenuItem>설정</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={() => logout()}>

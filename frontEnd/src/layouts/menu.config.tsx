@@ -10,8 +10,8 @@ export const MENU_RULES: Record<MenuPlatform, Record<string, MenuRule>> = {
     '/dashboard': { order: 1, visible: true },
     '/todos': { order: 2, visible: true },
     '/calendar': { order: 3, visible: true },
-    '/settings': { order: 4, visible: true },
-    '/admin': { order: 99, visible: true },
+    '/alerts': { order: 4, visible: true },
+    '/settings': { order: 5, visible: true },
   },
 
   mobile: {

@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { appToast } from '@/shared/utils/appToast';
 import GoogleIcon from '@/shared/ui/GoogleIcon';
 import KakaoIcon from '@/shared/ui/KakaoIcon';
-import { ProfileImageUpload } from './ProfileImageUpload';
+import { ProfileImageUpload } from '@/shared/ui/ProfileImageUpload';
 import { useSignup } from '../hooks/useSignup';
 import { useModal } from '@/shared/store/modalStore';
 import { useAuth } from '../hooks/useAuth';
