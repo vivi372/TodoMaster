@@ -154,6 +154,17 @@ export function SignupForm() {
     startTimer();
   };
 
+  const openPopup = (e: React.MouseEvent<HTMLSpanElement>, path: string) => {
+    e.preventDefault();
+    // windowName을 설정하면 브라우저가 해당 이름을 가진 창을 찾거나 새로 엽니다.
+    // URL만 지정하고 창 크기 옵션(width, height 등)을 비워두면,
+    // 대부분의 최신 브라우저는 이를 새 탭으로 띄워줍니다.
+    const windowName = 'PrivacyPolicyWindow';
+    const features = ''; // 팝업 크기, 위치 등의 옵션을 비워둡니다.
+
+    window.open(path, windowName, features);
+  };
+
   // 카카오 로그인 인증 URL
   const KAKAO_AUTH_URL =
     `https://kauth.kakao.com/oauth/authorize` +
@@ -343,23 +354,19 @@ export function SignupForm() {
         >
           {/* 전체 텍스트를 하나의 span으로 묶어 flex 컨테이너 내에서 텍스트 블록 역할을 명확히 합니다. */}
           <span className="block">
-            <Link
-              to="/terms"
+            <span
+              onClick={(e) => openPopup(e, '/terms')}
               className="text-foreground font-medium hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
             >
               이용약관
-            </Link>{' '}
+            </span>{' '}
             및{' '}
-            <Link
-              to="/privacy"
+            <span
+              onClick={(e) => openPopup(e, '/privacy')}
               className="text-foreground font-medium hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
             >
               개인정보처리방침
-            </Link>
+            </span>
             에 동의합니다
           </span>
         </Label>
