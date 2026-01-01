@@ -136,30 +136,27 @@ public class AuthService {
             throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
-        // 액세스/리프레시 토큰 생성
+        // 액세스 토큰 생성
         String access = jwtProvider.createAccessToken(user.getUserId(), user.getEmail());
-        String refresh = jwtProvider.createRefreshToken(user.getUserId());
+        String refresh;
 
-        int updated;
-        
-        // rememberMe에 따라 DB에 refresh 저장 (또는 항상 저장해도 됨)
+        // rememberMe에 따라 다른 유효기간의 리프레시 토큰 발급
         if (req.isRememberMe()) {
-        	// 1. 솔트 생성
-            String salt = tokenHashUtil.generateSalt();
-            
-            // 2. 토큰 해싱
-            String hashedToken = tokenHashUtil.hashToken(refresh, salt);
-        	
-            updated = userMapper.updateRefreshToken(user.getUserId(), hashedToken, salt);
+            refresh = jwtProvider.createLongRefreshToken(String.valueOf(user.getUserId()));
         } else {
-            // 로그인 유지 원치 않으면 DB에 저장하지 않음(혹은 null 저장)
-        	updated = userMapper.updateRefreshToken(user.getUserId(), null, null);
+            refresh = jwtProvider.createShortRefreshToken(String.valueOf(user.getUserId()));
         }
-        
+
+        // 1. 솔트 생성
+        String salt = tokenHashUtil.generateSalt();
+        // 2. 토큰 해싱
+        String hashedToken = tokenHashUtil.hashToken(refresh, salt);
+        // 3. DB에 저장
+        int updated = userMapper.updateRefreshToken(user.getUserId(), hashedToken, salt);
+
         if (updated == 0) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-        
 
         return access + "::" + refresh;
     }
@@ -203,7 +200,7 @@ public class AuthService {
 
         // 3) Access / Refresh Token 생성
         String access = jwtProvider.createAccessToken(userId,userInfo.getEmail());
-        String refresh = jwtProvider.createRefreshToken(userId);
+        String refresh = jwtProvider.createLongRefreshToken(String.valueOf(userId));
 
         // DB에 RefreshToken 등록
         // 1. 솔트 생성
@@ -246,7 +243,7 @@ public class AuthService {
 
         // 토큰 재발급 (회전)
         String newAccess = jwtProvider.createAccessToken(userId, user.getEmail());
-        String newRefresh = jwtProvider.createRefreshToken(userId);
+        String newRefresh = jwtProvider.rotateRefreshToken(refreshToken,String.valueOf(user.getUserId()));
         
         // 1. 솔트 생성
         String salt = tokenHashUtil.generateSalt();

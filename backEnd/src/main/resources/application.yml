@@ -1,7 +1,8 @@
 jwt:
   secret: ${JWT_SECRET}
   access-expire-minutes: 10
-  refresh-expire-days: 14
+  refresh_token_long_expire_days: 14
+  refresh_token_short_expire_days: 1
 
 server:
   port: 15554
