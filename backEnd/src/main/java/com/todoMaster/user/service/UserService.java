@@ -102,6 +102,26 @@ public class UserService {
         }
         
 	}	
+
+	/** 카카오 사용자의 이메일 변경 요청값 검증 */
+	public void newEmailVerifiForKakaoUser(String newEmail) {
+		// 1. 사용자 조회
+		Long userId = getCurrentUserId();
+		UserInfoVO user = userMapper.findById(userId);
+		if (user == null) {
+			throw new CustomException(ErrorCode.USER_NOT_FOUND);
+		}
+
+		// 2. 기존 이메일과 동일한지 검증
+		if(user.getEmail() != null && user.getEmail().equals(newEmail)) {
+			throw new CustomException(ErrorCode.SAME_EMAIL_AS_CURRENT);
+		}
+		
+		// 3. 사용중인 이메일인지 검증        
+		if(userMapper.selectUser(newEmail) != null) {
+			throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
+		}
+	}
 	
 	/** 이메일 변경 */
 	@Transactional

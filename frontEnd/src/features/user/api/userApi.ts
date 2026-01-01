@@ -5,6 +5,7 @@ import type {
   RequestEmailVerificationBody,
   ResendVerificationCodeBody,
   ExecuteEmailChangeBody,
+  RequestKakaoEmailChangeVerificationBody,
 } from '../types/userTypes';
 import { api } from '@/shared/lib/api/axios';
 
@@ -140,6 +141,22 @@ export const userApi = {
    */
   executeEmailChange: async (data: ExecuteEmailChangeBody): Promise<void> => {
     const res = await api.post<ApiResponse<void>>(`${meUrl}/change/email/execute`, data);
+    if (!res.data.success) throw res.data;
+    return res.data.data;
+  },
+
+  /**
+   * [카카오] 새 이메일 인증 요청 API
+   * @param {RequestKakaoEmailChangeVerificationBody} data - 요청 데이터 (새 이메일)
+   * @returns {Promise<void>}
+   */
+  requestKakaoEmailChangeVerification: async (
+    data: RequestKakaoEmailChangeVerificationBody,
+  ): Promise<void> => {
+    const res = await api.post<ApiResponse<void>>(
+      `${meUrl}/change/email/verification/request/kakao`,
+      data,
+    );
     if (!res.data.success) throw res.data;
     return res.data.data;
   },

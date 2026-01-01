@@ -1,5 +1,7 @@
 package com.todoMaster.auth.service;
 
+import com.todoMaster.auth.dto.response.LoginResponse;
+import com.todoMaster.auth.dto.response.SocialLoginResponse;
 import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.request.LoginRequest;
 import com.todoMaster.auth.dto.request.PasswordResetRequest;
@@ -126,7 +128,7 @@ public class AuthService {
      * 로그인 처리
      * @return "access::refresh" 문자열 반환 — 컨트롤러에서 분리하여 처리
      */
-    public String login(LoginRequest req) {
+    public LoginResponse login(LoginRequest req) {
         // 이메일로 사용자 조회
         UserInfoVO user = userMapper.selectVerifiedUser(req.getEmail());
         if (user == null) throw new CustomException(ErrorCode.LOGIN_FAILED);
@@ -158,11 +160,12 @@ public class AuthService {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        return access + "::" + refresh;
+        // 컨트롤러에서 refresh token은 쿠키로, access token은 body로 내려주도록 위임
+        return new LoginResponse(access + "::" + refresh, "standard");
     }
     
     @Transactional
-    public String socialLogin(String provider, String code) {
+    public SocialLoginResponse socialLogin(String provider, String code) {
 
         // 1) provider로부터 사용자 정보 가져오기
         SocialUserInfo userInfo = socialOAuthProcessor.getUserFromProvider(provider, code);
@@ -212,16 +215,14 @@ public class AuthService {
         // 3. DB에 저장
         userMapper.updateRefreshToken(userId, hashedToken, salt);
 
-        // return은 기존 login()처럼  
-        // "access::refresh" 형식 유지해서 컨트롤러에서 쿠키 처리 동일하게 하도록 한다.
-        return access + "::" + refresh;
+        return new SocialLoginResponse(access + "::" + refresh, provider);
     }
 
 
     /**
      * refresh 토큰으로 access 재발급 및 refresh 회전
      */
-    public String refresh(String refreshToken) {
+    public LoginResponse refresh(String refreshToken) {
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
@@ -258,9 +259,8 @@ public class AuthService {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
         
-       
-
-        return newAccess + "::" + newRefresh;
+        String provider = user.getProvider() == null ? "standard" : user.getProvider();
+        return new LoginResponse(newAccess + "::" + newRefresh, provider);
     }
 
     /**

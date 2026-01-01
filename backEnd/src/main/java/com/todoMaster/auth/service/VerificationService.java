@@ -332,7 +332,7 @@ public class VerificationService {
         		+ "\r\n"
         		+ "</body>\r\n"
         		+ "</html>";
-		// emailService.sendEmail(email, subject, content);
+		emailService.sendEmail(email, subject, content);
 	}
 	
 	private void applyResendRateLimit(String email) {

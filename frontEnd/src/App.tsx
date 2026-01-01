@@ -13,7 +13,7 @@ function App() {
     authApi
       .refresh()
       .then((res) => {
-        authStore.getState().setAccessToken(res.accessToken);
+        authStore.getState().setLogin(res);
       })
       .catch(() => {
         authStore.getState().logout();

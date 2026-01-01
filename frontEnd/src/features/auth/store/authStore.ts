@@ -1,11 +1,13 @@
 ﻿import { create } from 'zustand';
+import type { LoginResponse } from '../types/authTypes';
 
 interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean; // 인증 여부 변수
   isAuthInitialized: boolean; // 인증 시스템이 초기화되었는지 여부 변수
+  provider: 'google' | 'kakao' | 'standard' | null; // 로그인 제공자
 
-  setAccessToken: (token: string) => void;
+  setLogin: (loginResponse: LoginResponse) => void;
   setAuthInitialized: () => void;
   logout: () => void;
 }
@@ -14,10 +16,12 @@ export const authStore = create<AuthState>((set) => ({
   accessToken: null,
   isAuthenticated: false,
   isAuthInitialized: false,
+  provider: null,
 
-  setAccessToken: (token) =>
+  setLogin: (loginResponse) =>
     set({
-      accessToken: token,
+      accessToken: loginResponse.accessToken,
+      provider: loginResponse.provider,
       isAuthenticated: true,
     }),
   setAuthInitialized: () => set({ isAuthInitialized: true }),
@@ -25,5 +29,6 @@ export const authStore = create<AuthState>((set) => ({
     set({
       accessToken: null,
       isAuthenticated: false,
+      provider: null,
     }),
 }));

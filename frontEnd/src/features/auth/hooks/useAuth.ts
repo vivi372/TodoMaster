@@ -8,7 +8,7 @@ import { authStore } from '../store/authStore';
 import { authApi } from '../api/authApi';
 import type {
   AccountActivationRequest,
-  AuthResponse,
+  LoginResponse,
   LoginRequest,
   PasswordResetRequest,
   ResendRequest,
@@ -18,8 +18,8 @@ import { QUERY_KEYS } from '@/shared/const/queryKeys';
 
 // 훅의 반환 타입을 정의합니다.
 export interface UseAuthResult {
-  login: UseMutateFunction<AuthResponse, Error, LoginRequest, unknown>;
-  socialLogin: UseMutateAsyncFunction<AuthResponse, Error, SocialLoginRequest, unknown>;
+  login: UseMutateFunction<LoginResponse, Error, LoginRequest, unknown>;
+  socialLogin: UseMutateAsyncFunction<LoginResponse, Error, SocialLoginRequest, unknown>;
   logout: UseMutateAsyncFunction<void, Error, void, unknown>;
   resend: UseMutateAsyncFunction<void, Error, ResendRequest, unknown>;
   accountActivation: UseMutateAsyncFunction<void, Error, AccountActivationRequest, unknown>;
@@ -36,7 +36,7 @@ export interface UseAuthResult {
  */
 export const useAuth = (): UseAuthResult => {
   // 1. Zustand 스토어에서 Access Token을 저장하는 액션과 로그아웃 액션 가져오기
-  const setAccessToken = authStore.getState().setAccessToken;
+  const setLogin = authStore.getState().setLogin;
   const logout = authStore.getState().logout;
 
   const queryClient = useQueryClient();
@@ -48,8 +48,8 @@ export const useAuth = (): UseAuthResult => {
 
     // 요청이 성공했을 때 실행되는 콜백
     onSuccess: (data) => {
-      // 서버 응답 데이터(data.accessToken)를 Zustand 스토어에 저장하여 전역 상태를 업데이트합니다.
-      setAccessToken(data.accessToken);
+      // 서버 응답 데이터(data)를 Zustand 스토어에 저장하여 전역 상태를 업데이트합니다.
+      setLogin(data);
     },
   });
 
@@ -61,7 +61,7 @@ export const useAuth = (): UseAuthResult => {
 
     // 소셜 로그인 성공 시에도 동일하게 Access Token을 저장합니다.
     onSuccess: (data) => {
-      setAccessToken(data.accessToken);
+      setLogin(data);
     },
   });
 

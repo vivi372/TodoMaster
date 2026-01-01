@@ -24,6 +24,11 @@ export interface ResendVerificationCodeBody {
   email: string;
 }
 
+
+export interface RequestKakaoEmailChangeVerificationBody {
+  newEmail: string;
+}
+
 export interface ExecuteEmailChangeBody {
   newEmail: string;
   verificationCode: string;

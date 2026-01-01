@@ -1,5 +1,7 @@
 package com.todoMaster.user.controller;
 
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,7 @@ import com.todoMaster.common.service.S3Service;
 import com.todoMaster.global.dto.ApiResponse;
 import com.todoMaster.user.dto.request.ChangePasswordRequest;
 import com.todoMaster.user.dto.request.EmailChangeExecuteRequest;
+import com.todoMaster.user.dto.request.EmailChangeRequestForKakaoUser;
 import com.todoMaster.user.dto.request.UserUpdateRequest;
 import com.todoMaster.user.dto.request.authenticateForEmailChangeRequest;
 import com.todoMaster.user.dto.response.UserProfileResponse;
@@ -77,6 +80,23 @@ public class UserController {
     	return ResponseEntity.ok(ApiResponse.success("인증을 위한 인증코드가 전송되었습니다."));
     }
     
+    /**
+     * [카카오 사용자용] 이메일 변경을 위해 인증 코드 전송
+     * @param req 새 이메일 주소를 포함하는 요청 DTO
+     */
+    @PostMapping("/me/change/email/verification/request/kakao")
+    public ResponseEntity<?> requestEmailChangeForKakaoUser(
+            @RequestBody @Valid EmailChangeRequestForKakaoUser req) {        
+
+        // 1. 새 이메일 유효성 검증 (비밀번호 검증 생략)
+        userService.newEmailVerifiForKakaoUser(req.getNewEmail());
+
+        // 2. 이메일에 인증 코드 전송
+        verificationService.requestEmailChangeVerification(req.getNewEmail());
+        
+        return ResponseEntity.ok(ApiResponse.success("인증을 위한 인증코드가 전송되었습니다."));
+    }
+    
     
     @PostMapping("/me/change/email/execute")
     public ResponseEntity<?> executeEmailChange(
@@ -92,13 +112,14 @@ public class UserController {
         
         return ResponseEntity.ok(ApiResponse.success("이메일이 성공적으로 변경되었습니다."));
     }
+  
 
 	/**
 	 * 인증 코드 재전송
 	 */
 	@PostMapping("/me/change/email/verification/resend")
 	public ResponseEntity<?> resendVerificationCode(
-			@RequestBody java.util.Map<String, String> request) {
+			@RequestBody Map<String, String> request) {
 		String email = request.get("email");
 		verificationService.resendVerificationCode(email);
 		return ResponseEntity.ok(ApiResponse.success("인증 코드가 재전송되었습니다."));

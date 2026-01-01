@@ -13,4 +13,9 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
 	// 토큰
     private String accessToken;
+    
+    /**
+     * 로그인 제공자 (예: standard, kakao, google)
+     */
+    private String provider;
 }

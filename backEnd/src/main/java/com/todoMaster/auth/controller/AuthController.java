@@ -2,7 +2,6 @@ package com.todoMaster.auth.controller;
 
 import com.todoMaster.auth.dto.request.AccountActivationRequest;
 import com.todoMaster.auth.dto.request.LoginRequest;
-import com.todoMaster.auth.dto.request.PasswordCheckRequest;
 import com.todoMaster.auth.dto.request.PasswordForgotRequest;
 import com.todoMaster.auth.dto.request.PasswordResetRequest;
 import com.todoMaster.auth.dto.request.ResendRequest;
@@ -72,12 +71,14 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
-        String combined = authService.login(req); // "access::refresh"
-        String[] parts = combined.split("::", 2);
+        LoginResponse authResponse = authService.login(req);
+        String combinedToken = authResponse.getAccessToken(); // "access::refresh"
+        
+        String[] parts = combinedToken.split("::", 2);
         String access = parts[0];
         String refresh = parts[1];
         
-        log.info(combined);
+        log.info(combinedToken);
 
         // HttpOnly, SameSite 설정된 쿠키로 refresh 토큰 전달
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh)
@@ -88,10 +89,10 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
         
-        ApiResponse<LoginResponse> response = ApiResponse.success(
-        		"로그인 성공"
-        		, new LoginResponse(access)
-        );
+        // 최종 응답 본문에는 순수 access token과 provider 정보만 담음
+        LoginResponse responseBody = new LoginResponse(access, authResponse.getProvider());
+        
+        ApiResponse<LoginResponse> response = ApiResponse.success("로그인 성공", responseBody);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -101,10 +102,10 @@ public class AuthController {
     
     @PostMapping("/social/login")
     public ResponseEntity<?> socialLogin(@Valid @RequestBody SocialLoginRequest req) {
-
-        String combined = authService.socialLogin(req.getProvider(), req.getCode());
-        String[] parts = combined.split("::", 2);
-
+        SocialLoginResponse authResponse = authService.socialLogin(req.getProvider(), req.getCode());
+        String combinedToken = authResponse.getAccessToken();
+        
+        String[] parts = combinedToken.split("::", 2);
         String access = parts[0];
         String refresh = parts[1];
 
@@ -116,11 +117,11 @@ public class AuthController {
                 .maxAge(14 * 24 * 60 * 60)
                 .sameSite("Lax")
                 .build();
-
-        ApiResponse<SocialLoginResponse> response = ApiResponse.success(
-                "소셜 로그인 성공",
-                new SocialLoginResponse(access)
-        );
+        
+        // 최종 응답 본문에는 순수 access token과 provider 정보만 담음
+        SocialLoginResponse responseBody = new SocialLoginResponse(access, authResponse.getProvider());
+        
+        ApiResponse<SocialLoginResponse> response = ApiResponse.success("소셜 로그인 성공", responseBody);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -135,8 +136,10 @@ public class AuthController {
     public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null) throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
                 
-        String combined = authService.refresh(refreshToken);
-        String[] parts = combined.split("::", 2);
+        LoginResponse authResponse = authService.refresh(refreshToken);
+        String combinedToken = authResponse.getAccessToken();
+        
+        String[] parts = combinedToken.split("::", 2);
         String access = parts[0];
         String newRefresh = parts[1];
 
@@ -148,10 +151,9 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
         
-        ApiResponse<LoginResponse> response = ApiResponse.success(
-        		"토큰 갱신 성공"
-        		, new LoginResponse(access)
-        );
+        LoginResponse responseBody = new LoginResponse(access, authResponse.getProvider());
+
+        ApiResponse<LoginResponse> response = ApiResponse.success("토큰 갱신 성공", responseBody);
 
         return ResponseEntity.ok()
         		.header(HttpHeaders.SET_COOKIE, cookie.toString())

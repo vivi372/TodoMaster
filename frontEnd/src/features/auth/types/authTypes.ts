@@ -32,6 +32,7 @@ export interface signupRequest {
   profileImg: string | null;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
   accessToken: string;
+  provider: 'google' | 'kakao' | 'standard';
 }
