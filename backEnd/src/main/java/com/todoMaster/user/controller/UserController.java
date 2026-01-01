@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.todoMaster.auth.dto.response.LoginResponse;
+import com.todoMaster.auth.service.VerificationService;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.common.service.S3Service;
 import com.todoMaster.global.dto.ApiResponse;
 import com.todoMaster.user.dto.request.ChangePasswordRequest;
+import com.todoMaster.user.dto.request.EmailChangeExecuteRequest;
 import com.todoMaster.user.dto.request.UserUpdateRequest;
+import com.todoMaster.user.dto.request.authenticateForEmailChangeRequest;
 import com.todoMaster.user.dto.response.UserProfileResponse;
 import com.todoMaster.user.dto.response.UserSummaryProfileResponse;
 import com.todoMaster.user.service.UserService;
@@ -30,8 +32,13 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+    private final VerificationService verificationService;
     private final JwtProvider jwtProvider;
     private final S3Service s3Service;
+    
+    // ====================================================================================
+    // 🟢  profile edit
+    // ====================================================================================
 
     /**
      * 회원 정보 수정
@@ -48,7 +55,60 @@ public class UserController {
         userService.updateUser(userId, request);
 
         return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다."));
+    }    
+    
+    // ====================================================================================
+    // 🟢  profile email change
+    // ====================================================================================
+
+    /**
+     * 이메일 변경을 위해 이메일로 인증 코드 전송
+     * 비밀번호 검증(1단계) -> 이메일로 인증 코드 전송(2단계)
+     * @param req 
+     */
+    @PostMapping("/me/change/email/verification/request")
+    public ResponseEntity<?> requestNewEmailVerificationCode(
+    		@RequestBody @Valid authenticateForEmailChangeRequest req) {
+    	// 1. 비밀번호 / 이메일 검증
+    	userService.newEmailVerifi(req);
+    	// 2. 이메일에 인증 코드 전송
+    	verificationService.requestEmailChangeVerification(req.getEmail());
+    	
+    	return ResponseEntity.ok(ApiResponse.success("인증을 위한 인증코드가 전송되었습니다."));
     }
+    
+    
+    @PostMapping("/me/change/email/execute")
+    public ResponseEntity<?> executeEmailChange(
+            @RequestBody @Valid EmailChangeExecuteRequest req) {
+        
+        // 1. VerificationService를 통해 인증 코드 검증
+        boolean isVerified = verificationService.verifyVerificationCode(req.getNewEmail(), req.getVerificationCode());
+
+        // 2. 검증 성공 시 UserService를 통해 이메일 변경
+        if (isVerified) {
+            userService.updateUserEmail(req.getNewEmail());
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success("이메일이 성공적으로 변경되었습니다."));
+    }
+
+	/**
+	 * 인증 코드 재전송
+	 */
+	@PostMapping("/me/change/email/verification/resend")
+	public ResponseEntity<?> resendVerificationCode(
+			@RequestBody java.util.Map<String, String> request) {
+		String email = request.get("email");
+		verificationService.resendVerificationCode(email);
+		return ResponseEntity.ok(ApiResponse.success("인증 코드가 재전송되었습니다."));
+	}
+    
+    
+    // ====================================================================================
+    // 🟢  profile edit
+    // ====================================================================================
+
     
     @PatchMapping("/password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
@@ -57,6 +117,11 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("비밀번호가 변경되었습니다."));
     }
     
+    // ====================================================================================
+    // 🟢  profile show
+    // ====================================================================================
+
+    
     @GetMapping("/me/summary")
     public ResponseEntity<?> getSummaryMyInfo() {
     	
@@ -64,7 +129,7 @@ public class UserController {
     	UserSummaryProfileResponse profile = userService.getSummaryMyInfo();
     	
     	// 프로필 이미지의 저장위치가 S3일 경우 Presigned URL 생성
-    	if(profile.getProfileImg().startsWith("S3:")) {
+    	if(profile.getProfileImg() != null && profile.getProfileImg().startsWith("S3:")) {
     		// 1. S3 안에 오브젝트 키와 맞추기 위해 S3: 제거
     		String objectKey = s3Service.removeS3Prefix(profile.getProfileImg());
     		
@@ -99,7 +164,7 @@ public class UserController {
     	UserProfileResponse profile = userService.getMyInfo();
     	
     	// 프로필 이미지의 저장위치가 S3일 경우 Presigned URL 생성
-    	if(profile.getProfileImg().startsWith("S3:")) {
+    	if(profile.getProfileImg() != null && profile.getProfileImg().startsWith("S3:")) {
     		// 1. S3 안에 오브젝트 키와 맞추기 위해 S3: 제거
     		String objectKey = s3Service.removeS3Prefix(profile.getProfileImg());
     		
@@ -117,6 +182,11 @@ public class UserController {
     	
         return ResponseEntity.ok(response);
     }   
+    
+    // ====================================================================================
+    // 🟢  delete user
+    // ====================================================================================
+
     
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteMyAccount() {     

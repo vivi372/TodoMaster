@@ -1,8 +1,15 @@
 ﻿import type { ApiResponse } from '@/shared/types/api';
-import type { UserProfileResponse, UserSummaryProfileResponse } from '../types/userTypes';
+import type {
+  UserProfileResponse,
+  UserSummaryProfileResponse,
+  RequestEmailVerificationBody,
+  ResendVerificationCodeBody,
+  ExecuteEmailChangeBody,
+} from '../types/userTypes';
 import { api } from '@/shared/lib/api/axios';
 
 const userUrl = '/api/user';
+const meUrl = '/api/user/me';
 
 export const userApi = {
   /**
@@ -95,6 +102,45 @@ export const userApi = {
 
     // 3. 로그인 성공 시
     // 서버가 보낸 ApiResponse 객체 내부의 실제 데이터(data) 필드를 반환합니다.
+    return res.data.data;
+  },
+
+  /**
+   * 새 이메일 인증 요청 API
+   * @param {RequestEmailVerificationBody} data - 요청 데이터 (새 이메일, 현재 비밀번호)
+   * @returns {Promise<void>}
+   */
+  requestEmailVerification: async (data: RequestEmailVerificationBody): Promise<void> => {
+    const res = await api.post<ApiResponse<void>>(
+      `${meUrl}/change/email/verification/request`,
+      data,
+    );
+    if (!res.data.success) throw res.data;
+    return res.data.data;
+  },
+
+  /**
+   * 인증 코드 재전송 API
+   * @param {ResendVerificationCodeBody} data - 요청 데이터 (이메일)
+   * @returns {Promise<void>}
+   */
+  resendVerificationCode: async (data: ResendVerificationCodeBody): Promise<void> => {
+    const res = await api.post<ApiResponse<void>>(
+      `${meUrl}/change/email/verification/resend`,
+      data,
+    );
+    if (!res.data.success) throw res.data;
+    return res.data.data;
+  },
+
+  /**
+   * 이메일 변경 실행 API
+   * @param {ExecuteEmailChangeBody} data - 요청 데이터 (이메일, 인증 코드)
+   * @returns {Promise<void>}
+   */
+  executeEmailChange: async (data: ExecuteEmailChangeBody): Promise<void> => {
+    const res = await api.post<ApiResponse<void>>(`${meUrl}/change/email/execute`, data);
+    if (!res.data.success) throw res.data;
     return res.data.data;
   },
 };

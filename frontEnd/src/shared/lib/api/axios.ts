@@ -10,19 +10,19 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 
   // 2. withCredentials 설정: 모든 요청에 쿠키(Cookies) 및 HTTP 인증 자격 증명(Authorization headers 등)을
-  //    포함하여 보내도록 설정합니다. (주로 백엔드의 Refresh Token 쿠키를 보내기 위해 사용됨)
+  //    포함하여 보내도록 설정합니다. (주로 백엔드의 Refresh Token 쿠키를 보내기 위해 사용됨)
   withCredentials: true,
 });
 
 /**
  * 401 오류시 인터셉터로 refresh 요청시 무한 루프 가능성을 지우기 위한 Axios 인스턴스입니다.
  */
-const refreshApi = axios.create({
+export const refreshApi = axios.create({
   // 1. baseURL 설정: 환경 변수(예: .env 파일)에서 API 서버의 기본 URL을 가져옵니다.
   baseURL: import.meta.env.VITE_API_BASE_URL,
 
   // 2. withCredentials 설정: 모든 요청에 쿠키(Cookies) 및 HTTP 인증 자격 증명(Authorization headers 등)을
-  //    포함하여 보내도록 설정합니다. (주로 백엔드의 Refresh Token 쿠키를 보내기 위해 사용됨)
+  //    포함하여 보내도록 설정합니다. (주로 백엔드의 Refresh Token 쿠키를 보내기 위해 사용됨)
   withCredentials: true,
 });
 
@@ -49,11 +49,11 @@ api.interceptors.request.use((config) => {
  */
 api.interceptors.response.use(
   // 1. 성공 응답(fulfilled) 처리 핸들러:
-  //    응답이 성공(HTTP 2xx)일 경우, 응답 객체(res)를 그대로 통과시킵니다.
+  //    응답이 성공(HTTP 2xx)일 경우, 응답 객체(res)를 그대로 통과시킵니다.
   (res) => res,
 
   // 2. 오류 응답(rejected) 처리 핸들러:
-  //    응답이 오류(HTTP 4xx, 5xx 또는 네트워크 오류)일 경우 실행됩니다.
+  //    응답이 오류(HTTP 4xx, 5xx 또는 네트워크 오류)일 경우 실행됩니다.
   async (error) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
@@ -80,19 +80,15 @@ api.interceptors.response.use(
 
       // 4.3. 토큰 갱신 시작 (isRefreshing === false)
       isRefreshing = true; // 갱신 플래그를 설정하여 다른 요청을 대기열로 보냅니다.
-
       try {
         // Refresh Token을 사용하여 새 Access Token을 요청합니다.
         const res = await refreshApi.post('/api/auth/refresh');
         const newAccessToken = res.data.data.accessToken;
-
         // 1. 새 토큰을 Zustand 스토어에 저장합니다.
         authStore.getState().setAccessToken(newAccessToken);
-
         // 2. 대기열에 있던 모든 요청들을 새 토큰으로 재실행합니다.
         failedQueue.forEach((cb) => cb(newAccessToken));
         failedQueue = []; // 대기열을 비웁니다.
-
         // 3. 현재 실패했던 원본 요청을 새 토큰으로 헤더를 업데이트하고 재실행합니다.
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
@@ -102,7 +98,7 @@ api.interceptors.response.use(
         authStore.getState().logout();
         // 2. 로그인 페이지로 강제 이동시킵니다.
         window.location.href = '/login';
-        return Promise.reject(error);
+        return new Promise(() => {});
       } finally {
         // 토큰 갱신 프로세스가 완료되었으므로 플래그를 해제합니다.
         isRefreshing = false;

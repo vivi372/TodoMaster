@@ -11,6 +11,7 @@ import com.todoMaster.global.exception.ErrorCode;
 import com.todoMaster.global.s3.S3Uploader;
 import com.todoMaster.user.dto.request.ChangePasswordRequest;
 import com.todoMaster.user.dto.request.UserUpdateRequest;
+import com.todoMaster.user.dto.request.authenticateForEmailChangeRequest;
 import com.todoMaster.user.dto.response.UserProfileResponse;
 import com.todoMaster.user.dto.response.UserSummaryProfileResponse;
 import com.todoMaster.user.mapper.UserMapper;
@@ -25,6 +26,10 @@ public class UserService {
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	private final S3Uploader s3Uploader;
+	
+	// ====================================================================================
+    // 🟢  profile edit
+    // ====================================================================================
 	
 	@Transactional
     public void updateUser(Long userId, UserUpdateRequest request) {
@@ -67,6 +72,51 @@ public class UserService {
 	    }
     }
 	
+    // ====================================================================================
+    // 🟢  profile email change
+    // ====================================================================================
+
+	/** 이메일 변경 요청값 검증 */
+	public void newEmailVerifi(authenticateForEmailChangeRequest req) {
+		Long userId = getCurrentUserId();
+		
+		// 1. 사용자 조회
+        UserInfoVO user = userMapper.findById(userId);
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 2. 현재 비밀번호 검증
+        if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.PASSWORD_AUTHENTICATION_FAILED);
+        }
+        
+        // 3. 기존 이메일과 동일한지 검증
+        if(user.getEmail().equals(req.getEmail())) {
+        	throw new CustomException(ErrorCode.SAME_EMAIL_AS_CURRENT);
+        }
+        
+        // 4. 사용중인 이메일인지 검증        
+        if(userMapper.selectUser(req.getEmail()) != null) {
+        	throw new CustomException(ErrorCode.EMAIL_DUPLICATION);
+        }
+        
+	}	
+	
+	/** 이메일 변경 */
+	@Transactional
+	public void updateUserEmail(String newEmail) {
+		Long userId = getCurrentUserId();
+		int updated = userMapper.updateEmail(userId, newEmail);
+		if (updated == 0) {
+			throw new CustomException(ErrorCode.UPDATE_FAILED);
+		}
+	}
+	
+    // ====================================================================================
+    // 🟢  profile edit
+    // ====================================================================================
+	
 	 /**
      * 현재 로그인한 사용자의 비밀번호를 변경한다.
      * - SecurityContext의 Authentication.principal에 userId를 넣어두었다는 전제.
@@ -99,6 +149,10 @@ public class UserService {
         }
     }
     
+    // ====================================================================================
+    // 🟢  profile show
+    // ====================================================================================
+ 
     @Transactional(readOnly = true)
     public UserSummaryProfileResponse getSummaryMyInfo() {
         Long userId = getCurrentUserId();
@@ -160,6 +214,11 @@ public class UserService {
                 .categories(0)
                 .build();
     }
+    
+    // ====================================================================================
+    // 🟢  delete user
+    // ====================================================================================
+
     
     /**
      * 회원 삭제

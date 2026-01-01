@@ -14,6 +14,7 @@ import type {
   ResendRequest,
   SocialLoginRequest,
 } from '../types/authTypes';
+import { QUERY_KEYS } from '@/shared/const/queryKeys';
 
 // 훅의 반환 타입을 정의합니다.
 export interface UseAuthResult {
@@ -73,8 +74,8 @@ export const useAuth = (): UseAuthResult => {
       logout();
 
       // 사용자 관련 캐시 제거
-      queryClient.removeQueries({ queryKey: ['myProfile'] });
-      queryClient.removeQueries({ queryKey: ['headerProfile'] });
+      queryClient.removeQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
+      queryClient.removeQueries({ queryKey: [QUERY_KEYS.USER_SUMMARY_PROFILE] });
     },
   });
 

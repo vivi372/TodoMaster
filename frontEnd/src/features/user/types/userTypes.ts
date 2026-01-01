@@ -15,3 +15,16 @@ export interface UserProfileResponse {
   completedTodos: number;
   categories: number;
 }
+export interface RequestEmailVerificationBody {
+  email: string;
+  currentPassword?: string;
+}
+
+export interface ResendVerificationCodeBody {
+  email: string;
+}
+
+export interface ExecuteEmailChangeBody {
+  newEmail: string;
+  verificationCode: string;
+}

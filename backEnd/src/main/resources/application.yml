@@ -7,6 +7,11 @@ server:
   port: 15554
 
 spring:
+  # 레디스 설정
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost} # 환경 변수가 없을 경우 localhost
+      port: ${REDIS_PORT:6379}      # 환경 변수가 없을 경우 6379
   datasource:
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     url: ${DB_URL}

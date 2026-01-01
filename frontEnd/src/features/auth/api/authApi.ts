@@ -1,4 +1,4 @@
-﻿import { api } from '@/shared/lib/api/axios';
+﻿import { api, refreshApi } from '@/shared/lib/api/axios';
 import type {
   LoginRequest,
   SocialLoginRequest,
@@ -225,7 +225,7 @@ export const authApi = {
     // 1. Axios를 사용하여 로그인 API에 POST 요청을 보냅니다.
     // <ApiResponse<LoginResponse>>: 응답 데이터(res.data)의 타입이
     //                              ApiResponse<LoginResponse> 형태임을 명시합니다.
-    const res = await api.post<ApiResponse<AuthResponse>>(`${authUrl}/refresh`);
+    const res = await refreshApi.post<ApiResponse<AuthResponse>>(`${authUrl}/refresh`);
 
     console.log(res);
 

@@ -105,6 +105,15 @@
 		UPDATED_AT = SYSDATE
 		WHERE USER_ID = #{userId}
 	</update>
+	
+	<!-- 회원 이메일 수정 -->
+    <update id="updateEmail">
+		UPDATE USER_INFO
+		SET
+		EMAIL = #{email},
+		UPDATED_AT = SYSDATE
+		WHERE USER_ID = #{userId}
+	</update>
 
 	<!-- 비밀번호 수정 -->
 	<update id="updatePassword">

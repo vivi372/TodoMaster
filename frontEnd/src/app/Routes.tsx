@@ -16,6 +16,7 @@ import ForgotPasswordPage from '@/pages/forgotPassword/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/resetPassword/ResetPasswordPage';
 import { AppLayout } from '@/layouts/AppLayout';
 import ProfilePage from '@/pages/profile/ProfilePage';
+import ChangeEmailPage from '@/pages/profile/changeEmail/ChangeEmailPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -111,6 +112,7 @@ const routes: RouteObject[] = [
     children: [
       { path: '/todos', element: <TodoPage /> },
       { path: '/profile', element: <ProfilePage /> },
+      { path: '/profile/changeEmail', element: <ChangeEmailPage /> },
     ],
   },
   {

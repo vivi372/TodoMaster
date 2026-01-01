@@ -52,10 +52,10 @@ public class AuthService {
         vo.setPassword(passwordEncoder.encode(req.getPassword()));
         vo.setNickname(req.getNickname());
         // 소셜 계정의 이미지 경로와 구분을 위해 S3: 추가
-        vo.setProfileImg("S3:"+req.getProfileImg());
         vo.setIsVerified("UNVERIFIED"); // 이메일 인증 전에는 UNVERIFIED으로 저장
         
         if(vo.getProfileImg() != null) {
+        	vo.setProfileImg("S3:"+req.getProfileImg());
         	vo.setProfileImageStatus("TEMP");
         } else {
         	vo.setProfileImageStatus("NONE");
@@ -129,11 +129,11 @@ public class AuthService {
     public String login(LoginRequest req) {
         // 이메일로 사용자 조회
         UserInfoVO user = userMapper.selectVerifiedUser(req.getEmail());
-        if (user == null) throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        if (user == null) throw new CustomException(ErrorCode.LOGIN_FAILED);
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+            throw new CustomException(ErrorCode.LOGIN_FAILED);
         }
 
         // 액세스/리프레시 토큰 생성
@@ -328,13 +328,15 @@ public class AuthService {
     	// 기존 비밀번호와 동일한지 검증
     	user = userMapper.selectVerifiedUser(user.getEmail());
     	
+    	log.info(user.toString());
+    	
         if (passwordEncoder.matches(newRawPassword, user.getPassword())) {
             // 에러 발생: 새로운 비밀번호가 필요함을 알림
             throw new CustomException(ErrorCode.SAME_PASSWORD_NOT_ALLOWED); 
         }
         
         // DB에 저장을 위해 비밀번호 인코딩
-        String encodePassword = passwordEncoder.encode(user.getPassword());
+        String encodePassword = passwordEncoder.encode(newRawPassword);
        
         // 임시 비밀번호 DB에 저장
         userMapper.updatePassword(user.getUserId(), encodePassword);

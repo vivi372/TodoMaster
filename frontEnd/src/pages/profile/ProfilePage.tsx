@@ -156,7 +156,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/profile/change-email">변경</Link>
+                  <Link to="/profile/changeEmail">변경</Link>
                 </Button>
               </div>
 

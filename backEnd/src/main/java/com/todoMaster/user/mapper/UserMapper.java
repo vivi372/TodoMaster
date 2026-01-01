@@ -43,6 +43,9 @@ public interface UserMapper {
     // 회원정보 수정
     int updateUserInfo(@Param("userId") Long userId, @Param("request") UserUpdateRequest request);
     
+    // 이메일 수정
+    int updateEmail(@Param("userId") Long userId, @Param("email") String email);
+    
     // 비밀번호 변경
     int updatePassword(@Param("userId") Long userId, @Param("password") String password);
     

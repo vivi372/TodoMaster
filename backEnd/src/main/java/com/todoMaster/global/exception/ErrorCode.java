@@ -153,6 +153,15 @@ public enum ErrorCode {
     // 👤 회원 (MEMBER)
     // ====================================================================================
     
+    LOGIN_FAILED(
+	    HttpStatus.BAD_REQUEST, // 400 Bad Request
+	    "아이디 또는 비밀번호를 다시 확인해주세요.", 
+	    "",
+	    false, 
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.TOAST,
+	    ErrorAction.NONE
+	),
     // 토스트 (Toast) 필요 (즉시 피드백)
     PASSWORD_NOT_MATCH(
         HttpStatus.BAD_REQUEST, 
@@ -172,6 +181,16 @@ public enum ErrorCode {
         ErrorDisplayType.TOAST,
         ErrorAction.NONE
     ),
+    // 이메일 변경시
+    SAME_EMAIL_AS_CURRENT(
+	    HttpStatus.BAD_REQUEST, // 400 Bad Request
+	    "새로운 이메일 주소가 현재 이메일 주소와 동일합니다.", 
+	    "",
+	    false, // silent: true (경고이므로 TOAST 표시)
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.TOAST, // 토스트 팝업으로 간결하게 표시
+	    ErrorAction.NONE
+	),
     NICKNAME_DUPLICATION(
         HttpStatus.BAD_REQUEST, 
         "이미 사용 중인 닉네임입니다.", 
@@ -214,6 +233,7 @@ public enum ErrorCode {
         ErrorDisplayType.TOAST, // silent=true 이므로 실질적으로 의미 없음
         ErrorAction.NONE
     ),
+    // 로그인 시
     INVALID_PASSWORD(
         HttpStatus.BAD_REQUEST, 
         "비밀번호가 올바르지 않습니다.", 
@@ -223,6 +243,16 @@ public enum ErrorCode {
         ErrorDisplayType.TOAST,
         ErrorAction.NONE
     ),
+    // 회원 정보 수정시
+    PASSWORD_AUTHENTICATION_FAILED(
+	    HttpStatus.BAD_REQUEST, // 401 Unauthorized (인증 실패) 또는 BAD_REQUEST (400)도 가능
+	    "현재 비밀번호가 올바르지 않습니다.", 
+	    "",
+	    false, 
+	    ErrorType.WARNING, 
+	    ErrorDisplayType.TOAST, 
+	    ErrorAction.NONE
+	),
     SAME_PASSWORD_NOT_ALLOWED(
 		HttpStatus.BAD_REQUEST, 
 	    "새 비밀번호는 기존 비밀번호와 달라야 합니다.", 
@@ -240,8 +270,8 @@ public enum ErrorCode {
         "요청하신 데이터 업데이트 과정에서 오류가 발생했습니다. 잠시 후 다시 시도하거나, 변경 사항을 확인해 주세요.",
         false, // silent: false
         ErrorType.ERROR, // type: 'error'
-        ErrorDisplayType.CONFIRM_MODAL, // displayType: 'modal', ModalType: 'confirm'
-        ErrorAction.REDIRECT_TO_LOGIN // action: 'REDIRECT_TO_LOGIN'
+        ErrorDisplayType.ALERT_MODAL, // displayType: 'modal', ModalType: 'confirm'
+        ErrorAction.RELOAD_PAGE // action: 'REDIRECT_TO_LOGIN'
     ),
 	
 	// 비밀번호 찾기 시 카카오 소셜 계정 에러 정의
@@ -264,8 +294,52 @@ public enum ErrorCode {
 	    ErrorType.WARNING, 
 	    ErrorDisplayType.TOAST, 
 	    ErrorAction.NONE 
-	);
+	),
+	
+	// Redis에 인증 코드가 없거나 만료되었을 때 발생하는 에러 정의
+    // ErrorType: WARNING, ErrorDisplayType: TOAST, ErrorAction: NONE 적용
+    VERIFICATION_CODE_EXPIRED(
+        HttpStatus.BAD_REQUEST, 
+        "인증 코드가 만료되었거나 유효하지 않습니다. 코드를 재전송해 주세요.", 
+        "", 
+        false, 
+        ErrorType.WARNING, 
+        ErrorDisplayType.TOAST, 
+        ErrorAction.NONE
+    ),
 
+	// 인증 코드 재전송 1분당 3회 제한
+	VERIFICATION_CODE_RESEND_LIMIT(
+		HttpStatus.BAD_REQUEST,
+		"인증 코드 재전송은 1분당 3회로 제한됩니다.",
+		"",
+		false,
+		ErrorType.WARNING,
+		ErrorDisplayType.TOAST,
+		ErrorAction.NONE
+	),
+
+	// 인증 코드 불일치
+	VERIFICATION_CODE_MISMATCH(
+		HttpStatus.BAD_REQUEST,
+		"인증 코드가 일치하지 않습니다.",
+		"",
+		false,
+		ErrorType.WARNING,
+		ErrorDisplayType.TOAST,
+		ErrorAction.NONE
+	),
+
+	// 인증 실패 횟수 5회 초과
+	VERIFICATION_CODE_FAILURE_LIMIT(
+		HttpStatus.BAD_REQUEST,
+		"인증 코드 5회 오류. 보안을 위해 재전송을 통해 새로운 코드를 받아주세요.",
+		"",
+		false,
+		ErrorType.ERROR,
+		ErrorDisplayType.ALERT_MODAL,
+		ErrorAction.NONE
+	);
 
     private final HttpStatus status;
     private final String message; // 출력 메시지 or 모달 제목

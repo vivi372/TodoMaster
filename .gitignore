@@ -84,5 +84,7 @@ pnpm-debug.log*
 # ------------------------------------
 .gemini/
 .env
+log.md
+frontend-error-context.md
 
 /.metadata/
