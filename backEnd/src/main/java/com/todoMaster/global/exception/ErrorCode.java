@@ -261,7 +261,17 @@ public enum ErrorCode {
 	    ErrorType.WARNING, 
 	    ErrorDisplayType.ALERT_MODAL, // 중요 정보이므로 모달을 권장
 	    ErrorAction.NONE
-    ),      
+    ),
+
+    USER_PROVIDER_MISMATCH(
+        HttpStatus.FORBIDDEN,
+        "소셜 로그인 사용자는 이용할 수 없는 기능입니다.",
+        "",
+        false,
+        ErrorType.WARNING,
+        ErrorDisplayType.TOAST,
+        ErrorAction.NONE
+    ),
     
     // 모달 (Modal) 필요 (데이터 지속성 및 안정성 관련 치명적 오류)
     UPDATE_FAILED(

@@ -174,7 +174,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/profile/change-password">변경</Link>
+                  <Link to="/profile/changePassword">변경</Link>
                 </Button>
               </div>
 

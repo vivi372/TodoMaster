@@ -33,3 +33,9 @@ export interface ExecuteEmailChangeBody {
   newEmail: string;
   verificationCode: string;
 }
+
+export interface ChangePasswordBody {
+  currentPassword?: string;
+  newPassword?: string;
+}
+

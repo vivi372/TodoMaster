@@ -84,7 +84,7 @@ public class SecurityConfig {
 
         // WebConfig에서 설정했던 내용과 동일하게 구성
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*")); // 또는 특정 헤더 (Content-Type, Authorization 등) 명시
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // long 타입으로 지정

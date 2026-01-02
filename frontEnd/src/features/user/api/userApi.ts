@@ -6,6 +6,7 @@ import type {
   ResendVerificationCodeBody,
   ExecuteEmailChangeBody,
   RequestKakaoEmailChangeVerificationBody,
+  ChangePasswordBody,
 } from '../types/userTypes';
 import { api } from '@/shared/lib/api/axios';
 
@@ -158,6 +159,29 @@ export const userApi = {
       data,
     );
     if (!res.data.success) throw res.data;
+    return res.data.data;
+  },
+
+  /**
+   * 비밀번호 변경 api
+   * @param {ChangePasswordBody} data - 요청 데이터 (현재 비밀번호, 새 비밀번호)
+   * @returns {Promise<void>}
+   * @throws {Error} - 서버 응답의 'success' 필드가 false일 경우, 응답 메시지를 포함한 오류 발생
+   */
+  changePassword: async (data: ChangePasswordBody): Promise<void> => {
+    // 1. Axios를 사용하여 비밀번호 변경 api에 PUT 요청을 보냅니다.
+    const res = await api.patch<ApiResponse<void>>(`${userUrl}/password`, data);
+
+    // 2. 응답 데이터의 성공 여부 확인
+    // 서버에서 정의한 ApiResponse 구조의 'success' 필드가 false인 경우,
+    // 즉, HTTP 상태 코드가 200이라도 비즈니스 로직 상의 오류가 발생한 경우 처리합니다.
+    if (!res.data.success) {
+      // ApiResponse의 메시지 필드를 포함하여 오류를 발생시킵니다.
+      throw res.data;
+    }
+
+    // 3. 비밀번호 변경 성공 시
+    // 서버가 보낸 ApiResponse 객체 내부의 실제 데이터(data) 필드를 반환합니다.
     return res.data.data;
   },
 };

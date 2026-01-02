@@ -4,7 +4,6 @@ import com.todoMaster.auth.dto.response.LoginResponse;
 import com.todoMaster.auth.dto.response.SocialLoginResponse;
 import com.todoMaster.auth.dto.SocialUserInfo;
 import com.todoMaster.auth.dto.request.LoginRequest;
-import com.todoMaster.auth.dto.request.PasswordResetRequest;
 import com.todoMaster.auth.dto.request.UserSignupRequest;
 import com.todoMaster.auth.util.JwtProvider;
 import com.todoMaster.auth.util.TokenHashUtil;
@@ -17,7 +16,6 @@ import com.todoMaster.user.vo.UserInfoVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
