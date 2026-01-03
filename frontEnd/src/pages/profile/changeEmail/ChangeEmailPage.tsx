@@ -86,8 +86,10 @@ export default function ChangeEmailPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <PageHeader /> {/* 페이지 헤더 컴포넌트 */}
-      {provider === 'standard' && <StandardChangeEmail />}{/* 일반 계정 사용자용 이메일 변경 */}
-      {provider === 'kakao' && <KakaoChangeEmail />}{/* 카카오 계정 사용자용 이메일 변경 */}
+      {provider === 'standard' && <StandardChangeEmail />}
+      {/* 일반 계정 사용자용 이메일 변경 */}
+      {provider === 'kakao' && <KakaoChangeEmail />}
+      {/* 카카오 계정 사용자용 이메일 변경 */}
     </div>
   );
 }
@@ -388,7 +390,8 @@ const PageHeader = () => (
     </Button>
     <div>
       <h1 className="text-2xl font-bold">이메일 변경</h1> {/* 페이지 제목 */}
-      <p className="text-muted-foreground">보안을 위해 본인 확인이 필요합니다</p> {/* 설명 메시지 */}
+      <p className="text-muted-foreground">보안을 위해 본인 확인이 필요합니다</p>{' '}
+      {/* 설명 메시지 */}
     </div>
   </div>
 );
@@ -476,7 +479,8 @@ const StandardRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
             현재 비밀번호 <span className="text-destructive">*</span> {/* 현재 비밀번호 라벨 */}
           </Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> {/* 잠금 아이콘 */}
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />{' '}
+            {/* 잠금 아이콘 */}
             <Input
               id="currentPassword"
               type={showPassword ? 'text' : 'password'} // 비밀번호 표시/숨김 토글
@@ -491,7 +495,8 @@ const StandardRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />} {/* 눈 아이콘 토글 */}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}{' '}
+              {/* 눈 아이콘 토글 */}
             </button>
           </div>
         </div>
@@ -500,7 +505,8 @@ const StandardRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
             새 이메일 <span className="text-destructive">*</span> {/* 새 이메일 라벨 */}
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> {/* 이메일 아이콘 */}
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />{' '}
+            {/* 이메일 아이콘 */}
             <Input
               id="newEmail"
               type="email"
@@ -523,7 +529,7 @@ const StandardRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
           {isSubmitting ? '전송 중...' : '인증 코드 받기'} {/* 제출 버튼 텍스트 */}
         </Button>
         <Button type="button" variant="outline" asChild className="flex-1 bg-transparent">
-          <Link to="/profile">취소</Link> {/* 취소 버튼 */}
+          <Link to="/profile">취소</Link>
         </Button>
       </div>
     </Card>
@@ -537,14 +543,16 @@ const KakaoRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
     <Card className="p-6 space-y-6">
       <div>
         <h2 className="text-xl font-bold mb-2">새 이메일 입력</h2> {/* 섹션 제목 */}
-        <p className="text-sm text-muted-foreground">변경할 새 이메일 주소를 입력하세요.</p> {/* 섹션 설명 */}
+        <p className="text-sm text-muted-foreground">변경할 새 이메일 주소를 입력하세요.</p>{' '}
+        {/* 섹션 설명 */}
       </div>
       <div className="space-y-2">
         <Label htmlFor="newEmail">
           새 이메일 <span className="text-destructive">*</span> {/* 새 이메일 라벨 */}
         </Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /> {/* 이메일 아이콘 */}
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />{' '}
+          {/* 이메일 아이콘 */}
           <Input
             id="newEmail"
             type="email"
@@ -566,7 +574,7 @@ const KakaoRequestForm = ({ isSubmitting }: { isSubmitting: boolean }) => {
           {isSubmitting ? '전송 중...' : '인증 코드 받기'} {/* 제출 버튼 텍스트 */}
         </Button>
         <Button type="button" variant="outline" asChild className="flex-1 bg-transparent">
-          <Link to="/profile">취소</Link> {/* 취소 버튼 */}
+          <Link to="/profile">취소</Link>
         </Button>
       </div>
     </Card>
@@ -600,7 +608,8 @@ const VerifyForm = (props: any) => {
           입력하세요 {/* 섹션 설명 */}
         </p>
       </div>
-      <TimerDisplay timeRemaining={timeRemaining} formatTime={formatTime} /> {/* 타이머 표시 컴포넌트 */}
+      <TimerDisplay timeRemaining={timeRemaining} formatTime={formatTime} />{' '}
+      {/* 타이머 표시 컴포넌트 */}
       {/* 인증 실패 메시지 (에러 횟수가 0보다 클 때 표시) */}
       {verificationErrorCount > 0 && (
         <motion.div
@@ -616,7 +625,8 @@ const VerifyForm = (props: any) => {
             <p className="text-xs text-red-600">
               {isMaxErrorReached
                 ? '인증 코드 오류 횟수를 초과했습니다. 재전송을 시도해 주세요.'
-                : '5회 실패 시 인증 코드를 재전송해야 합니다'} {/* 실패 횟수에 따른 안내 메시지 */}
+                : '5회 실패 시 인증 코드를 재전송해야 합니다'}{' '}
+              {/* 실패 횟수에 따른 안내 메시지 */}
             </p>
           </div>
         </motion.div>
@@ -640,7 +650,8 @@ const VerifyForm = (props: any) => {
         isResendCooldown={isResendCooldown}
         resendCount={resendCount}
         isResending={isResending}
-      /> {/* 재전송 버튼 컴포넌트 */}
+      />{' '}
+      {/* 재전송 버튼 컴포넌트 */}
       <div className="flex gap-3">
         <Button
           type="submit"
@@ -680,7 +691,8 @@ const TimerDisplay = ({
     >
       <Clock className={`w-5 h-5 text-${timeColorClass}-600`} /> {/* 시계 아이콘 */}
       <p className={`text-sm font-medium text-${timeColorClass}-800`}>
-        {isExpired ? '인증 코드가 만료되었습니다' : `남은 시간: ${formatTime(timeRemaining)}`} {/* 타이머 메시지 */}
+        {isExpired ? '인증 코드가 만료되었습니다' : `남은 시간: ${formatTime(timeRemaining)}`}{' '}
+        {/* 타이머 메시지 */}
       </p>
     </div>
   );
@@ -691,7 +703,8 @@ const ResendButton = (props: any) => {
   const { onResend, resendCooldown, isResendCooldown, resendCount, isResending } = props;
   return (
     <div className="text-center space-y-2">
-      <p className="text-sm text-muted-foreground">인증 코드를 받지 못하셨나요?</p> {/* 안내 메시지 */}
+      <p className="text-sm text-muted-foreground">인증 코드를 받지 못하셨나요?</p>{' '}
+      {/* 안내 메시지 */}
       <Button
         type="button"
         variant="outline"
@@ -700,9 +713,11 @@ const ResendButton = (props: any) => {
         disabled={isResendCooldown || resendCount >= 3 || isResending} // 재전송 버튼 비활성화 조건
       >
         <Send className="w-4 h-4 mr-2" />
-        인증 코드 재전송 {isResendCooldown && ` (${resendCooldown}초 대기)`} {/* 재전송 버튼 텍스트 */}
+        인증 코드 재전송 {isResendCooldown && ` (${resendCooldown}초 대기)`}{' '}
+        {/* 재전송 버튼 텍스트 */}
       </Button>
-      <p className="text-xs text-muted-foreground">재전송 {resendCount}/3회 (1분당 3회 제한)</p> {/* 재전송 횟수 제한 안내 */}
+      <p className="text-xs text-muted-foreground">재전송 {resendCount}/3회 (1분당 3회 제한)</p>{' '}
+      {/* 재전송 횟수 제한 안내 */}
     </div>
   );
 };
