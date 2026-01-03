@@ -8,12 +8,12 @@ import { ImageCropModal } from '@/shared/ui/ImageCropModal';
 // =================================================================
 
 interface ProfileImageUploadProps {
-  value?: File | null;
+  value?: File | string | null;
   onChange: (file: File | null) => void;
   onBlur: () => void;
   defaultPreview?: string | null;
   size?: 'sm' | 'md' | 'lg';
-  disabled: boolean;
+  disabled?: boolean;
 }
 
 export function ProfileImageUpload({
@@ -45,6 +45,7 @@ export function ProfileImageUpload({
   // =================================================================
 
   useEffect(() => {
+    console.log(value);
     // RHF의 value가 File 객체로 존재할 때 미리보기 업데이트
     if (value instanceof File) {
       const reader = new FileReader();
@@ -52,6 +53,9 @@ export function ProfileImageUpload({
         setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(value);
+    } else if (typeof value === 'string' && value.length > 0) {
+      // 백엔드에서 받은 프로필 이미지 URL을 그대로 프리뷰 URL로 사용
+      setPreviewUrl(value);
     } else if (!value) {
       setPreviewUrl(defaultPreview);
     }

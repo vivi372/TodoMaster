@@ -4,6 +4,12 @@
 
 <mapper namespace="com.todoMaster.user.mapper.UserMapper">
 
+	<!-- 닉네임 중복 카운트 -->
+    <select id="countByNickname" resultType="int">
+        SELECT COUNT(*)
+        FROM USER_INFO
+        WHERE NICKNAME = #{nickname}
+    </select>
 	<!-- 이메일 중복 카운트 -->
     <select id="countByEmail" resultType="int">
         SELECT COUNT(*)
@@ -97,11 +103,10 @@
     </update>
 
 	<!-- 회원 정보 수정 -->
-    <update id="updateUserInfo">
+    <update id="updateUserNickname">
 		UPDATE USER_INFO
 		SET
-		NICKNAME = #{request.nickname},
-		PROFILE_IMG = #{request.profileImg},
+		NICKNAME = #{nickname},
 		UPDATED_AT = SYSDATE
 		WHERE USER_ID = #{userId}
 	</update>

@@ -154,6 +154,40 @@ public class S3Service {
     }
     
     /**
+     * AWS S3 버킷에서 지정된 객체(파일)를 삭제합니다.
+     * 이 메서드는 주로 파일 이동(Copy-Delete) 로직의 최종 단계에서 원본 파일을 삭제하거나,
+     * 사용자 파일 삭제 요청 시 해당 객체를 제거하는 데 사용됩니다.
+     * * @param objectKey S3 버킷 내에서 삭제할 객체의 고유 키 (예: 'path/to/filename.jpg').
+     * @throws CustomException S3 통신 오류 또는 삭제 실패와 같은 내부 오류 발생 시 
+     * ErrorCode.FILE_MOVE_FAILED 예외를 발생시키고 상세 로그를 남깁니다.
+     */
+    public void delete(String objectKey) {
+        try {
+            // 1. [S3 객체 삭제 요청 빌드]
+            // 삭제할 버킷 이름(bucket)과 객체 키(objectKey)를 설정하여 요청 객체를 생성합니다.
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucket) // S3 버킷 이름
+                    .key(objectKey)  // 버킷 내 파일 경로 (Object Key)
+                    .build();
+
+            // 2. [S3 객체 삭제 실행]
+            s3Client.deleteObject(deleteRequest);
+            
+            // * 주석: 삭제 성공 시 별도의 반환 값 없이 메서드 종료
+        } catch (Exception e) {
+            // [예외 처리] S3 클라이언트 통신 중 발생하는 모든 예외를 포착합니다.
+            
+            // 내부 에러이므로 상세 로그 필수
+            // 에러 발생한 객체 키와 스택 트레이스를 로그에 남깁니다.
+            log.error("S3 delete failed. object={}", objectKey ,e);
+
+            // 사용자에게는 내부 처리 실패로만 전달
+            // FILE_MOVE_FAILED 코드를 사용하여 사용자에게는 일반적인 처리 실패 메시지를 반환합니다.
+            throw new CustomException(ErrorCode.FILE_MOVE_FAILED);
+        }
+    }
+    
+    /**
      * 문자열의 가장 앞에 있는 "S3:" 접두사를 제거합니다.
      * @param originalString 원본 문자열
      * @return 접두사가 제거된 문자열. 접두사가 없으면 원본 문자열을 반환합니다.

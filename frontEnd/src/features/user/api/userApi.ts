@@ -7,6 +7,7 @@ import type {
   ExecuteEmailChangeBody,
   RequestKakaoEmailChangeVerificationBody,
   ChangePasswordBody,
+  UpdateMyInfoBody,
 } from '../types/userTypes';
 import { api } from '@/shared/lib/api/axios';
 
@@ -182,6 +183,27 @@ export const userApi = {
 
     // 3. 비밀번호 변경 성공 시
     // 서버가 보낸 ApiResponse 객체 내부의 실제 데이터(data) 필드를 반환합니다.
+    return res.data.data;
+  },
+
+  /**
+   * 회원 정보 수정 API
+   * @param {UpdateMyInfoBody} data - 요청 데이터 (닉네임, 프로필 이미지 S3 key)
+   * @returns {Promise<void>}
+   * @throws {Error} - 서버 응답의 'success' 필드가 false일 경우, 응답 객체 전체를 throw
+   */
+  updateMyInfo: async (data: UpdateMyInfoBody): Promise<void> => {
+    // 1. Axios를 사용하여 회원 정보 수정 API에 PUT 요청을 보냅니다.
+    const res = await api.put<ApiResponse<void>>(`${meUrl}`, data);
+
+    // 2. 응답 데이터의 성공 여부를 확인합니다.
+    // 서버에서 정의한 ApiResponse의 'success' 필드가 false이면,
+    // 비즈니스 로직상 오류이므로 응답 객체 전체를 throw하여 에러 처리를 위임합니다.
+    if (!res.data.success) {
+      throw res.data;
+    }
+
+    // 3. 성공 시 별도의 데이터를 반환하지 않습니다.
     return res.data.data;
   },
 };

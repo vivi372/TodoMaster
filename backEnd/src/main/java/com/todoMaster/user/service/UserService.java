@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
-import com.todoMaster.global.s3.S3Uploader;
+import com.todoMaster.common.service.S3Service; // S3Uploader 대신 common.service.S3Service 사용
 import com.todoMaster.user.dto.request.ChangePasswordRequest;
 import com.todoMaster.user.dto.request.UserUpdateRequest;
 import com.todoMaster.user.dto.request.authenticateForEmailChangeRequest;
@@ -16,59 +16,119 @@ import com.todoMaster.user.dto.response.UserProfileResponse;
 import com.todoMaster.user.dto.response.UserSummaryProfileResponse;
 import com.todoMaster.user.mapper.UserMapper;
 import com.todoMaster.user.vo.UserInfoVO;
+import com.todoMaster.user.vo.ProfileImageStatus; // ProfileImageStatus 임포트
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // 로그 사용을 위해 임포트
 
 @Service
 @RequiredArgsConstructor
+@Slf4j // 로그 사용
 public class UserService {
 	
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final S3Uploader s3Uploader;
+	private final S3Service s3Service; // S3Service 주입
 	
 	// ====================================================================================
     // 🟢  profile edit
     // ====================================================================================
 	
 	@Transactional
-    public void updateUser(Long userId, UserUpdateRequest request) {
-		
+    public void updateUser(UserUpdateRequest request) {
+		// 1. 사용자 조회 (DB에서 현재 사용자 정보 및 기존 프로필 이미지 확보)
+		Long userId = getCurrentUserId();
 		UserInfoVO oldUser = userMapper.findById(userId);
 		if (oldUser == null) {
-	        throw new CustomException(ErrorCode.USER_NOT_FOUND);
+	        throw new CustomException(ErrorCode.USER_NOT_FOUND); // 사용자를 찾을 수 없습니다.
 	    }
 		
-		String newImgUrl = request.getProfileImg();  // 프론트에서 전달한 새 URL
+		// 2. 요청 데이터 검증 및 업데이트		
+		String newProfileImgKey = request.getProfileImg();  // 프론트에서 전달한 새 프로필 이미지 S3 Object Key (with "S3:" prefix)
+		String oldProfileImgKey = oldUser.getProfileImg();  // DB에 저장된 기존 프로필 이미지 S3 Object Key (with "S3:" prefix)
+        
+		String finalProfileImgKeyForDb = oldProfileImgKey; // DB에 최종 저장될 프로필 이미지 키 (S3: 포함)
+		ProfileImageStatus profileImageStatus = oldUser.getProfileImageStatus(); // DB에 최종 저장될 프로필 이미지 상태
+		
+		boolean isImageChanged = false; // 이미지 변경 여부 플래그
+		
+		// 3. 프로필 이미지 변경 여부 판단 및 처리
+		// 요청 profileImg ≠ 기존 profileImg 인 경우만 처리
+		if ((newProfileImgKey == null && oldProfileImgKey != null) || // 새 이미지가 없고 기존 이미지는 있는 경우 (삭제)
+		    (newProfileImgKey != null && !newProfileImgKey.equals(oldProfileImgKey))) { // 새 이미지가 있고 기존 이미지와 다른 경우 (변경)
+		    
+			isImageChanged = true;
+			
+            // 3-1. 기존 이미지 삭제 (조건부)
+            // 기존 이미지가 있고, 기본 이미지가 아니며(DB 값이 null 아닐 경우), 새 이미지와 다를 경우 S3 삭제
+            if (oldProfileImgKey != null && profileImageStatus != ProfileImageStatus.NONE) { // ProfileImageStatus가 NONE 아닐 경우로 판단
+                try {
+                    s3Service.delete(s3Service.removeS3Prefix(oldProfileImgKey));
+                    log.info("Old profile image deleted from S3: {}", oldProfileImgKey);
+                } catch (Exception e) {
+                    log.warn("Failed to delete old profile image from S3: {}. Error: {}", oldProfileImgKey, e.getMessage());
+                    // 삭제 실패 시 로그만 남기고 에러는 throw 하지 않음 
+                }
+            }
 
+            // 3-2. 새 이미지 처리 분기
+            if (newProfileImgKey != null) { // 새 이미지가 있는 경우
+                String cleanedNewProfileImgKey = s3Service.removeS3Prefix(newProfileImgKey); // "S3:" 접두사 제거
+                
+                // Case A. profileImg가 tmp 경로일 때 (S3:temp/profile/...)
+                if (cleanedNewProfileImgKey.startsWith("temp/profile/")) {
+                    String targetKey = "user/" + oldUser.getUserId() + "/profile.png"; // 영구 경로 생성
+                    try {
+                        s3Service.move(cleanedNewProfileImgKey, targetKey); // S3Service move 사용
+                        finalProfileImgKeyForDb = "S3:" + targetKey; // DB에는 **정식 profile 경로 URL** 저장 (S3: 접두사 다시 추가)
+                        profileImageStatus = ProfileImageStatus.READY; // 이미지 상태를 READY로 변경
+                        log.info("Profile image moved from {} to {}", cleanedNewProfileImgKey, targetKey);
+                    } catch (CustomException e) {
+                        // 파일 이동 실패는 사용자에게 알림 (FILE_MOVE_FAILED)
+                        throw e;
+                    } catch (Exception e) {
+                        log.error("Failed to move profile image from {} to {}. Error: {}", cleanedNewProfileImgKey, targetKey, e.getMessage());
+                        throw new CustomException(ErrorCode.FILE_MOVE_FAILED);
+                    }
+                } 
+                // Case B. profileImg가 기존 profile 경로일 때 (S3:user/...) - 이 경우는 newProfileImgKey == oldProfileImgKey 와 중복
+                // 혹은 이미 영구 경로에 있는 이미지를 다시 설정하는 경우. 이 때는 별도의 S3 처리 스킵.
+                else if (cleanedNewProfileImgKey.startsWith("user/")) {
+                    finalProfileImgKeyForDb = newProfileImgKey; // DB에 저장될 키는 그대로
+                    profileImageStatus = ProfileImageStatus.READY;
+                } else {
+                    // 알 수 없는 경로이거나 유효하지 않은 S3 CDN URL (profile_edit.md의 검증 항목)
+                    log.warn("Invalid profile image S3 key provided: {}", newProfileImgKey);
+                    throw new CustomException(ErrorCode.INVALID_INPUT_VALUE); // 유효하지 않은 입력값입니다.
+                }
+            } else { // 새 이미지가 없는 경우 (프로필 이미지 삭제 요청)
+                finalProfileImgKeyForDb = null; // DB에 null 저장
+                profileImageStatus = ProfileImageStatus.NONE; // 이미지 상태를 DEFAULT로 변경
+            }
+		}
+		
+		// 4. DB 업데이트 시도
 		try {
-	        int result = userMapper.updateUserInfo(userId, request);
+	        int result = userMapper.updateUserNickname(userId, request.getNickname()); // 닉네임 업데이트
 
 	        if (result == 0) {
-	            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+	            throw new CustomException(ErrorCode.UPDATE_FAILED); // 회원 정보 수정에 실패했습니다.
 	        }
-
-	        // 기존 이미지 삭제 조건
-	        if (newImgUrl != null
-	                && oldUser.getProfileImg() != null
-	                && !oldUser.getProfileImg().equals(newImgUrl)) {
-
-	            s3Uploader.delete(oldUser.getProfileImg());
+	        
+	        // 이미지 변경이 있었을 경우에만 이미지 관련 DB 업데이트
+	        if (isImageChanged) {
+	        	int imgUpdateResult = userMapper.updateProfileImage(userId, finalProfileImgKeyForDb, profileImageStatus);
+	        	if (imgUpdateResult == 0) {
+		            throw new CustomException(ErrorCode.UPDATE_FAILED); // 프로필 이미지 수정에 실패했습니다.
+		        }
 	        }
-
+	        
+	    } catch (CustomException e) {
+	        throw e; // 이미 CustomException으로 처리된 에러는 그대로 다시 던짐
 	    } catch (Exception e) {
-	        // 🔥 DB 수정 실패 → 새로 업로드된 이미지 삭제 (롤백)
-	        if (newImgUrl != null
-	                && (oldUser.getProfileImg() == null || !oldUser.getProfileImg().equals(newImgUrl))) {
-
-	            try {
-	                s3Uploader.delete(newImgUrl);
-	            } catch (Exception s3e) {
-	                System.err.println("이미지 롤백 삭제 실패: " + s3e.getMessage());
-	            }
-	        }
-
-	        throw e;
+	        // 그 외 예외 발생 시 (DB 오류 등)
+	        log.error("User profile update failed for userId: {}. Error: {}", userId, e.getMessage());
+	        throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR); // 내부 서버 오류가 발생했습니다.
 	    }
     }
 	
@@ -203,7 +263,7 @@ public class UserService {
         
         // 이미지 오류 경고 여부 확인
         // 프로필 이미지 상태가 FAILED 경우에만 경고 출력(최초 1회만)
-        if(user.getProfileImageStatus().equals("FAILED")) {
+        if(user.getProfileImageStatus() == ProfileImageStatus.FAILED) {
         	isImageWarningShown = true;
         }
         
@@ -219,7 +279,7 @@ public class UserService {
     	// 1. userId 가져오기
         Long userId = getCurrentUserId();    
         // 2. profileImageStatus를 CONFIRM(오류 확인 상태)로 설정
-        String profileImageStatus = "CONFIRM";
+        ProfileImageStatus profileImageStatus = ProfileImageStatus.CONFIRM;
         // 3. DB 수정
         int updated = userMapper.updateProfileImageStatus(userId, profileImageStatus);
         if (updated == 0) {
@@ -242,7 +302,7 @@ public class UserService {
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .profileImg(user.getProfileImg())
-                .profileImageStatus(user.getProfileImageStatus())
+                .profileImageStatus(user.getProfileImageStatus().name())
                 .provider(user.getProvider())
                 .createdAt(user.getCreatedAt())
                 .totalTodos(0L) // after) totalTodos / completedTodos / categories는 투두 구현전이라서 하드코딩
@@ -283,12 +343,13 @@ public class UserService {
 
             // 2) 기존 프로필 이미지가 있다면 S3에서 삭제
             if (profileImg != null) {
-                s3Uploader.delete(profileImg);
+                s3Service.delete(s3Service.removeS3Prefix(profileImg)); // s3Uploader -> s3Service
             }
 
         } catch (Exception e) {
             // 🔥 실패하면 S3 이미 삭제되었을 수도 있으므로
             // 여기서는 S3 롤백은 하지 않음(삭제는 롤백 불가능), DB만 롤백됨.
+            log.warn("Failed to delete S3 image during user deletion for userId: {}. Image: {}. Error: {}", userId, profileImg, e.getMessage());
             throw e;
         }
     }

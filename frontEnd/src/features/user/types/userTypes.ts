@@ -39,3 +39,8 @@ export interface ChangePasswordBody {
   newPassword?: string;
 }
 
+export interface UpdateMyInfoBody {
+  nickname: string;
+  profileImg: string | null;
+}
+

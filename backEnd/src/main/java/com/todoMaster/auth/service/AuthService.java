@@ -11,6 +11,7 @@ import com.todoMaster.common.service.S3Service;
 import com.todoMaster.global.exception.CustomException;
 import com.todoMaster.global.exception.ErrorCode;
 import com.todoMaster.user.mapper.UserMapper;
+import com.todoMaster.user.vo.ProfileImageStatus;
 import com.todoMaster.user.vo.UserInfoVO;
 
 import lombok.RequiredArgsConstructor;
@@ -56,9 +57,9 @@ public class AuthService {
         
         if(vo.getProfileImg() != null) {
         	vo.setProfileImg("S3:"+req.getProfileImg());
-        	vo.setProfileImageStatus("TEMP");
+        	vo.setProfileImageStatus(ProfileImageStatus.TEMP);
         } else {
-        	vo.setProfileImageStatus("NONE");
+        	vo.setProfileImageStatus(ProfileImageStatus.NONE);
         }
 
         int result = userMapper.insertUser(vo);
@@ -112,12 +113,12 @@ public class AuthService {
                 		newProfileImage);
                 // 경로 이동 성공시 db READY로 업데이트
                 // 소셜 계정의 이미지 경로와 구분을 위해 S3: 추가
-                userMapper.updateProfileImage(storeUser.getUserId(),"S3:"+newProfileImage,"READY");    
+                userMapper.updateProfileImage(storeUser.getUserId(),"S3:"+newProfileImage, ProfileImageStatus.READY);    
             }
         } catch (CustomException e) {      
         	// 경로 이동 실패시 db FAILED로 업데이트
             log.warn("Profile image move failed. userId={}",storeUser.getUserId(), e);
-            userMapper.updateProfileImage(storeUser.getUserId(),storeUser.getProfileImg(),"FAILED");
+            userMapper.updateProfileImage(storeUser.getUserId(),storeUser.getProfileImg(), ProfileImageStatus.FAILED);
         }
 
     }
@@ -183,9 +184,9 @@ public class AuthService {
             vo.setProfileImg(userInfo.getProfileImage());
             vo.setIsVerified("VERIFIED"); // 소셜 유저는 이메일 인증이 필요없으므로 VERIFIED 저장
             if(vo.getProfileImg() != null) {
-            	vo.setProfileImageStatus("READY");
+            	vo.setProfileImageStatus(ProfileImageStatus.READY);
             } else {
-            	vo.setProfileImageStatus("NONE");
+            	vo.setProfileImageStatus(ProfileImageStatus.NONE);
             }
 
             int result = userMapper.insertUser(vo);

@@ -3,15 +3,16 @@ package com.todoMaster.user.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.todoMaster.user.dto.request.UserUpdateRequest;
+import com.todoMaster.user.vo.ProfileImageStatus;
 import com.todoMaster.user.vo.UserInfoVO;
 
 @Mapper
 public interface UserMapper {
 	
-	// 이메일 중복 체크
-    int countByEmail(String email);
-    
+	// 닉네임 중복 체크
+    int countByNickname(String nickname);
+    // 이메일 중복 체크
+    int countByEmail(String email);    
     // provider + providerId 로 기존 회원 조회
     UserInfoVO findByProvider(@Param("provider") String provider,@Param("providerId") String providerId);
 
@@ -41,7 +42,7 @@ public interface UserMapper {
     );
     
     // 회원정보 수정
-    int updateUserInfo(@Param("userId") Long userId, @Param("request") UserUpdateRequest request);
+    int updateUserNickname(@Param("userId") Long userId, @Param("nickname") String nickname);
     
     // 이메일 수정
     int updateEmail(@Param("userId") Long userId, @Param("email") String email);
@@ -52,11 +53,11 @@ public interface UserMapper {
     // 프로필 이미지 수정
     int updateProfileImage(@Param("userId") Long userId,
             @Param("profileImg") String profileImg, 
-            @Param("profileImageStatus") String profileImageStatus);
+            @Param("profileImageStatus") ProfileImageStatus profileImageStatus);
     
     // 프로필 이미지 상태 수정
     int updateProfileImageStatus(@Param("userId") Long userId,
-            @Param("profileImageStatus") String profileImageStatus);
+            @Param("profileImageStatus") ProfileImageStatus profileImageStatus);
     
     // 회원 탈퇴
     int deleteUser(Long userId);

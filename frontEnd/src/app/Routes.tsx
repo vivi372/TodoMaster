@@ -12,12 +12,13 @@ import TermsPage from '@/pages/terms/TermsPage';
 import PrivacyPage from '@/pages/privacy/PrivacyPage';
 import VerifyPage from '@/pages/verify/VerifyPage';
 import ErrorPage from '@/pages/ErrorPage';
-import ForgotPasswordPage from '@/pages/forgotPassword/ForgotPasswordPage';
+import ForgotPasswordPage from '@/pages/profile/forgotPassword/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/resetPassword/ResetPasswordPage';
 import { AppLayout } from '@/layouts/AppLayout';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import ChangeEmailPage from '@/pages/profile/changeEmail/ChangeEmailPage';
-import ChangePasswordPage from '@/pages/changePassword/ChangePasswordPage';
+import ChangePasswordPage from '@/pages/profile/changePassword/ChangePasswordPage';
+import ProfileEditPage from '@/pages/profile/edit/ProfileEditPage';
 
 /**
  * RootRedirect 컴포넌트:
@@ -113,6 +114,7 @@ const routes: RouteObject[] = [
     children: [
       { path: '/todos', element: <TodoPage /> },
       { path: '/profile', element: <ProfilePage /> },
+      { path: '/profile/edit', element: <ProfileEditPage /> },
       { path: '/profile/changeEmail', element: <ChangeEmailPage /> },
       { path: '/profile/changePassword', element: <ChangePasswordPage /> },
     ],

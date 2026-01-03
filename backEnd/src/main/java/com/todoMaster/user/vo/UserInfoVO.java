@@ -1,7 +1,6 @@
 package com.todoMaster.user.vo;
 
 import java.time.LocalDate;
-
 import lombok.Data;
 
 /**
@@ -20,7 +19,7 @@ public class UserInfoVO {
     // 프로필 이미지 URL
     private String profileImg;
     // 프로필 이미지 상태
-    private String profileImageStatus;
+    private ProfileImageStatus profileImageStatus;
     // 이메일 인증 여부
     private String isVerified;
     // GOOGLE / KAKAO / NAVER
