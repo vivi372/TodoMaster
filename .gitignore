@@ -85,9 +85,6 @@ pnpm-debug.log*
 .gemini/
 .env
 log.md
-error-context.md
-api-statement-form.md
-FRONTEND_PROJECT_FLOW.md
-table_definitions.md
+/gemini-context/
 
 /.metadata/
