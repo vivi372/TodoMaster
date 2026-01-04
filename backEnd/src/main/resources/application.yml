@@ -8,6 +8,10 @@ server:
   port: 15554
 
 spring:
+  # 시스템 기본 타임존을 'Asia/Seoul'로 설정
+  jackson:
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSZ
+    time-zone: Asia/Seoul
   # 레디스 설정
   data:
     redis:
