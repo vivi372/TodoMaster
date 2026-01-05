@@ -349,7 +349,31 @@ public enum ErrorCode {
 		ErrorType.ERROR,
 		ErrorDisplayType.ALERT_MODAL,
 		ErrorAction.NONE
-	);
+	),
+
+    // ====================================================================================
+    // 📝 투두 (TODO)
+    // ====================================================================================
+
+    TODO_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "Todo를 찾을 수 없습니다.",
+        "",
+        false,
+        ErrorType.WARNING,
+        ErrorDisplayType.TOAST,
+        ErrorAction.NONE
+    ),
+
+    TODO_ACCESS_DENIED(
+        HttpStatus.FORBIDDEN,
+        "Todo에 접근할 권한이 없습니다.",
+        "해당 항목에 대한 접근 권한이 없습니다. 계정을 확인해주세요.",
+        false,
+        ErrorType.WARNING,
+        ErrorDisplayType.ALERT_MODAL,
+        ErrorAction.REDIRECT_TO_HOME
+    );
 
     private final HttpStatus status;
     private final String message; // 출력 메시지 or 모달 제목

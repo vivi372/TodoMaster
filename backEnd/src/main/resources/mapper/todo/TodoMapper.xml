@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- com.todoMaster.todo.mapper.TodoMapper 인터페이스와 매핑되는 MyBatis 매퍼 XML -->
+<mapper namespace="com.todoMaster.todo.mapper.TodoMapper">
+
+    <resultMap id="todoResultMap" type="com.todoMaster.todo.vo.TodoVO">
+        <id property="todoId" column="TODO_ID"/>
+        <result property="userId" column="USER_ID"/>
+        <result property="categoryId" column="CATEGORY_ID"/>
+        <result property="title" column="TITLE"/>
+        <result property="memo" column="MEMO"/>
+        <result property="priority" column="PRIORITY"/>
+        <!-- IS_COMPLETED 컬럼은 'Y' 또는 'N' 값을 가지는 VARCHAR 타입이며, String 타입의 isCompleted 필드와 매핑됩니다. -->
+        <result property="isCompleted" column="IS_COMPLETED"/>
+        <result property="dueDate" column="DUE_DATE"/>
+        <result property="repeatRuleId" column="REPEAT_RULE_ID"/>
+        <result property="completedAt" column="COMPLETED_AT"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <!-- 
+        새로운 Todo 항목을 추가합니다.
+        SEQ_TODO_ID 시퀀스를 사용하여 새로운 ID를 할당합니다.
+    -->
+    <insert id="insertTodo" parameterType="com.todoMaster.todo.vo.TodoVO">
+        <selectKey keyProperty="todoId" resultType="Long" order="BEFORE">
+            SELECT SEQ_TODO_ID.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TODO (
+            TODO_ID, USER_ID, CATEGORY_ID, TITLE, MEMO, 
+            PRIORITY, IS_COMPLETED, DUE_DATE, REPEAT_RULE_ID, 
+            COMPLETED_AT, CREATED_AT
+        )
+        VALUES (
+            #{todoId},
+            #{userId},
+            #{categoryId},
+            #{title},
+            #{memo},
+            #{priority},
+            #{isCompleted}, /* 'Y' 또는 'N' 문자열 값을 기대합니다. */
+            #{dueDate},
+            #{repeatRuleId},
+            #{completedAt},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 
+        Todo ID를 기준으로 특정 Todo 항목을 조회합니다.
+    -->
+    <select id="findTodoById" resultMap="todoResultMap" parameterType="long">
+        SELECT *
+        FROM TODO
+        WHERE TODO_ID = #{todoId}
+    </select>
+
+    <!-- 
+        특정 사용자의 모든 Todo 항목을 최신순으로 조회합니다.
+    -->
+    <select id="findTodosByUserId" resultMap="todoResultMap" parameterType="long">
+        SELECT *
+        FROM TODO
+        WHERE USER_ID = #{userId}
+        ORDER BY CREATED_AT DESC
+    </select>
+
+    <!-- 
+        기존 Todo 항목을 수정합니다.
+        동적 SQL(<set>, <if>)을 사용하여 변경이 필요한 필드만 선택적으로 업데이트합니다.
+    -->
+    <update id="updateTodo" parameterType="com.todoMaster.todo.vo.TodoVO">
+        UPDATE TODO
+        <set>
+            <if test="title != null">
+                TITLE = #{title},
+            </if>
+            <if test="memo != null">
+                MEMO = #{memo},
+            </if>
+            <!-- isCompleted 필드는 'Y' 또는 'N' 문자열 값으로 업데이트됩니다. -->
+            <if test="isCompleted != null">
+                IS_COMPLETED = #{isCompleted},
+            </if>
+            <if test="dueDate != null">
+                DUE_DATE = #{dueDate},
+            </if>
+            <if test="categoryId != null">
+                CATEGORY_ID = #{categoryId},
+            </if>
+            <if test="priority != null">
+                PRIORITY = #{priority},
+            </if>
+            <if test="repeatRuleId != null">
+                REPEAT_RULE_ID = #{repeatRuleId},
+            </if>
+            <if test="completedAt != null">
+                COMPLETED_AT = #{completedAt},
+            </if>
+            UPDATED_AT = SYSDATE
+        </set>
+        WHERE TODO_ID = #{todoId}
+    </update>
+
+    <!-- 
+        Todo ID를 기준으로 특정 Todo 항목을 삭제합니다.
+    -->
+    <delete id="deleteTodo" parameterType="long">
+        DELETE FROM TODO
+        WHERE TODO_ID = #{todoId}
+    </delete>
+
+    <!-- 
+        특정 사용자의 Todo 목록을 페이징 처리하여 조회합니다.
+        Oracle의 ROWNUM을 사용하여 행 번호를 기준으로 특정 범위의 데이터를 가져옵니다.
+    -->
+    <select id="findTodosWithPaging" resultMap="todoResultMap" parameterType="map">
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS RNUM, T.*
+            FROM (
+                SELECT *
+                FROM TODO
+                WHERE USER_ID = #{userId}
+                ORDER BY CREATED_AT DESC
+            ) T
+        )
+        WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+    </select>
+    
+    <!-- 
+        페이징 처리를 위해 특정 사용자의 전체 Todo 항목 수를 계산합니다.
+    -->
+    <select id="countTodos" resultType="int" parameterType="map">
+        SELECT COUNT(*)
+        FROM TODO
+        WHERE USER_ID = #{userId}
+    </select>
+
+</mapper>

@@ -1,15 +1,14 @@
 package com.todoMaster.global.exception;
 
+import com.todoMaster.global.dto.ApiResponse;
+import com.todoMaster.todo.exception.TodoNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import com.todoMaster.global.dto.ApiResponse;
 
 
 @Slf4j
@@ -28,6 +27,15 @@ public class GlobalExceptionHandler {
         		.status(code.getStatus())
         		.body(ApiResponse.fail(code));
     }
+
+    /** ✔ Todo not found */
+    @ExceptionHandler(TodoNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleTodoNotFoundException(TodoNotFoundException ex) {
+        log.warn("TodoNotFoundException: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.fail(ErrorCode.TODO_NOT_FOUND, ex.getMessage()));
+    }   
 
     /** ✔ @Valid DTO Validation 실패 */
     @ExceptionHandler(MethodArgumentNotValidException.class)

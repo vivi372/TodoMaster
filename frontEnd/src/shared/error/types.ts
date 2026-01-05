@@ -20,6 +20,11 @@ export type ServerErrorCode =
   | 'REFRESH_TOKEN_MISMATCH'
   | 'AUTHORIZATION_HEADER_MISSING'
   | 'TOKEN_AUTHENTICATION_FAILED'
+  // ===== Todo =====
+  | 'TODO_NOT_FOUND'
+  | 'TODO_ACCESS_DENIED'
+  // ===== 인증 / 인가 (추가) =====
+  | 'SESSION_EXPIRED'
   // ===== 회원 =====
   | 'LOGIN_FAILED'
   | 'PASSWORD_NOT_MATCH'

@@ -85,6 +85,6 @@ pnpm-debug.log*
 .gemini/
 .env
 log.md
-/gemini-context/
+# /gemini-context/
 
 /.metadata/
