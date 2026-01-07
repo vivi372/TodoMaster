@@ -10,6 +10,7 @@ interface AuthState {
   setLogin: (loginResponse: LoginResponse) => void;
   setAuthInitialized: () => void;
   logout: () => void;
+  setAccessToken: (token: string) => void;
 }
 
 export const authStore = create<AuthState>((set) => ({
@@ -30,5 +31,10 @@ export const authStore = create<AuthState>((set) => ({
       accessToken: null,
       isAuthenticated: false,
       provider: null,
+    }),
+  setAccessToken: (token) =>
+    set({
+      accessToken: token,
+      isAuthenticated: true,
     }),
 }));

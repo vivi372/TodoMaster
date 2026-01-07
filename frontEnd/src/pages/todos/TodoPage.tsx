@@ -1,19 +1,23 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Filter, ArrowUpDown, CheckSquare, Loader2, XCircle } from 'lucide-react';
+import {
+  Plus,
+  Filter,
+  ArrowUpDown,
+  CheckSquare,
+  Loader2,
+  XCircle,
+  ChevronDown,
+} from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/ui/badge';
-import {
-  useGetTodos,
-  useCreateTodo,
-  useUpdateTodo,
-  useDeleteTodo,
-} from '@/features/todos/hooks/useTodos';
+import { useGetTodos, useUpdateTodo, useDeleteTodo } from '@/features/todos/hooks/useTodos'; // createTodoMutation 제거
 import type { TodoResponse } from '@/features/todos/api/todoApi';
 import { appToast } from '@/shared/utils/appToast';
 import { useModal } from '@/shared/store/modalStore';
-import { TodoItem } from '@/features/todos/components/TodoItem'; // 분리된 TodoItem 컴포넌트를 import 합니다.
+import { TodoItem } from '@/features/todos/components/TodoItem';
+import { TodoFormModal } from '@/features/todos/components/TodoFormModal';
 
 // --- TodoPage: 메인 페이지 컴포넌트 --- //
 export default function TodoPage() {
@@ -21,17 +25,21 @@ export default function TodoPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
 
+  // TodoFormModal 상태 관리
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedTodoForEdit, setSelectedTodoForEdit] = useState<TodoResponse | undefined>(
+    undefined,
+  );
+
   // --- 데이터 로직 (커스텀 훅 사용) --- //
   // 1. Todo 목록 조회 (useQuery)
   const { data: todos, isLoading, isError, error } = useGetTodos();
 
-  // 2. Todo 생성 (useMutation)
-  const createTodoMutation = useCreateTodo();
-
-  // 3. Todo 수정 (useMutation) - 완료/미완료 토글 포함
+  // 2. Todo 수정 (useMutation) - 완료/미완료 토글 포함
   const updateTodoMutation = useUpdateTodo();
 
-  // 4. Todo 삭제 (useMutation)
+  // 3. Todo 삭제 (useMutation)
   const deleteTodoMutation = useDeleteTodo();
 
   // --- 이벤트 핸들러 --- //
@@ -71,31 +79,33 @@ export default function TodoPage() {
   );
 
   /**
-   * @description Todo 수정 기능을 위한 핸들러 (현재 미개발).
-   * 사용자에게 기능이 준비 중임을 알립니다.
+   * @description 새로운 Todo 생성을 위해 모달을 여는 핸들러.
+   * 모달 모드를 'create'로 설정하고, 선택된 Todo 정보를 초기화합니다.
    */
-  const handleEdit = useCallback((todo: TodoResponse) => {
-    appToast.info({ message: 'Todo 수정 기능은 추후 개발 예정입니다.' });
+  const handleOpenCreateModal = useCallback(() => {
+    setModalMode('create');
+    setSelectedTodoForEdit(undefined); // 생성 모드이므로 선택된 Todo 없음
+    setIsModalOpen(true);
   }, []);
 
   /**
-   * @description 새로운 Todo를 추가하는 임시 핸들러.
-   * `createTodoMutation`을 통해 '새로운 임시 Todo'를 생성합니다.
+   * @description 기존 Todo 수정을 위해 모달을 여는 핸들러.u
+   * 모달 모드를 'edit'으로 설정하고, 수정할 Todo 정보를 설정합니다.
+   * @param todo - 수정할 Todo 객체
    */
-  const handleAddTodo = useCallback(() => {
-    appToast.info({ message: '임시 Todo를 생성합니다.' });
-    createTodoMutation.mutate({
-      title: `새로운 임시 Todo (${new Date().toLocaleTimeString()})`,
-      memo: '임시로 생성된 Todo입니다.',
-      dueDate: new Date().toISOString().split('T')[0],
-    });
-  }, [createTodoMutation]);
+  const handleOpenEditModal = useCallback((todo: TodoResponse) => {
+    setModalMode('edit');
+    setSelectedTodoForEdit(todo); // 수정할 Todo 정보 설정
+    setIsModalOpen(true);
+  }, []);
 
   /**
-   * @description 미개발 기능(필터, 정렬 등)에 대한 임시 핸들러.
+   * @description TodoFormModal에서 폼 제출 성공 시 호출되는 콜백.
+   * 모달을 닫고 선택된 Todo 정보를 초기화합니다.
    */
-  const handleFutureFeature = useCallback((featureName: string) => {
-    appToast.info({ message: `${featureName} 기능은 추후 개발 예정입니다.` });
+  const onFormSubmitSuccess = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedTodoForEdit(undefined); // 모달이 닫히면 선택된 Todo 정보 초기화
   }, []);
 
   // --- 렌더링 로직 (메모이제이션) --- //
@@ -158,7 +168,7 @@ export default function TodoPage() {
               <Button
                 size="icon"
                 className="lg:hidden h-10 w-10 rounded-full shadow-md bg-gradient-to-br from-primary to-amber-400"
-                onClick={handleAddTodo}
+                onClick={handleOpenCreateModal} // handleAddTodo -> handleOpenCreateModal
                 aria-label="할 일 추가"
               >
                 <Plus className="h-5 w-5" />
@@ -178,7 +188,7 @@ export default function TodoPage() {
               size="sm"
               onClick={() => {
                 setFilterOpen(!filterOpen);
-                handleFutureFeature('필터');
+                appToast.info({ message: '필터 기능은 추후 개발 예정입니다.' }); // handleFutureFeature('필터') 대체
               }}
               className={cn('gap-2', filterOpen && 'bg-primary/10 text-primary')}
             >
@@ -189,7 +199,7 @@ export default function TodoPage() {
               variant="outline"
               size="sm"
               className="gap-2 bg-transparent"
-              onClick={() => handleFutureFeature('정렬')}
+              onClick={() => appToast.info({ message: '정렬 기능은 추후 개발 예정입니다.' })} // handleFutureFeature('정렬') 대체
             >
               <ArrowUpDown className="h-4 w-4" />
               <span className="hidden sm:inline">정렬</span>
@@ -222,7 +232,9 @@ export default function TodoPage() {
                         <Badge
                           variant="outline"
                           className="cursor-pointer"
-                          onClick={() => handleFutureFeature(`'${cat}' 카테고리 필터`)}
+                          onClick={() =>
+                            appToast.info({ message: '카테고리 필터 기능은 추후 개발 예정입니다.' })
+                          } // handleFutureFeature 대체
                         >
                           {cat}
                         </Badge>
@@ -272,7 +284,7 @@ export default function TodoPage() {
                     todo={todo}
                     onToggle={handleToggle}
                     onDelete={handleDelete}
-                    onEdit={handleEdit}
+                    onEdit={handleOpenEditModal} // handleEdit 대신 handleOpenEditModal 사용
                   />
                 </motion.div>
               ))}
@@ -325,7 +337,7 @@ export default function TodoPage() {
                         todo={todo}
                         onToggle={handleToggle}
                         onDelete={handleDelete}
-                        onEdit={handleEdit}
+                        onEdit={handleOpenEditModal} // handleEdit 대신 handleOpenEditModal 사용
                       />
                     </motion.div>
                   ))}
@@ -351,7 +363,7 @@ export default function TodoPage() {
             </motion.div>
             <h3 className="text-lg font-semibold text-foreground mb-2">할 일이 없어요</h3>
             <p className="text-sm text-muted-foreground mb-6">새로운 할 일을 추가해보세요!</p>
-            <Button className="gap-2" onClick={handleAddTodo}>
+            <Button className="gap-2" onClick={handleOpenCreateModal}>
               <Plus className="h-4 w-4" />할 일 추가
             </Button>
           </motion.div>
@@ -362,35 +374,26 @@ export default function TodoPage() {
       <motion.div
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="hidden lg:block fixed bottom-8 right-8 z-40"
+        className="hidden lg:block fixed bottom-8 right-8 z-[100]" // z-index를 99보다 높은 100으로 수정
       >
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-amber-400 hover:shadow-xl"
-          onClick={handleAddTodo}
+          onClick={handleOpenCreateModal} // handleAddTodo -> handleOpenCreateModal
           aria-label="할 일 추가"
         >
           <Plus className="h-6 w-6" />
         </Button>
       </motion.div>
+
+      {/* TodoFormModal */}
+      <TodoFormModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        mode={modalMode}
+        todoToEdit={selectedTodoForEdit}
+        onSuccess={onFormSubmitSuccess}
+      />
     </div>
   );
 }
-
-// ChevronDown 아이콘 컴포넌트 (완료 목록 토글에 사용)
-const ChevronDown = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);

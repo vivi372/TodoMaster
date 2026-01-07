@@ -6,6 +6,11 @@ export interface CreateTodoRequest {
   title: string;
   memo?: string;
   dueDate?: string; // YYYY-MM-DD
+  /**
+   * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
+   * 백엔드에서 기본값을 설정할 수 있으므로 선택 사항입니다.
+   */
+  priority?: number;
 }
 
 export interface UpdateTodoRequest {
@@ -17,6 +22,11 @@ export interface UpdateTodoRequest {
    */
   isCompleted?: 'Y' | 'N';
   dueDate?: string; // YYYY-MM-DD
+  /**
+   * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
+   * 부분 업데이트를 위해 선택 사항입니다.
+   */
+  priority?: number;
 }
 
 // 단일 Todo에 대한 응답 타입

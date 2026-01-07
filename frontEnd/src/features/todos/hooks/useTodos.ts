@@ -28,9 +28,7 @@ export const useGetTodos = () => {
  * @param {Object} options - useMutation에 전달할 추가 옵션 (예: onSuccess)
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useCreateTodo = (options?: {
-  onSuccess?: (data: TodoResponse) => void;
-}) => {
+export const useCreateTodo = (options?: { onSuccess?: (data: TodoResponse) => void }) => {
   const queryClient = useQueryClient();
 
   return useMutation<TodoResponse, Error, CreateTodoRequest>({
@@ -51,7 +49,9 @@ export const useCreateTodo = (options?: {
  * @description Todo를 수정하는 useMutation 커스텀 훅.
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useUpdateTodo = () => {
+export const useUpdateTodo = (options?: {
+  onSuccess?: (data: TodoResponse) => void;
+}) => {
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -65,8 +65,10 @@ export const useUpdateTodo = () => {
      * @description mutation이 성공적으로 완료되었을 때 실행됩니다.
      * 완료 토스트 메시지를 사용자에게 보여줍니다.
      */
-    onSuccess: () => {
-      appToast.success({ message: 'Todo 상태가 업데이트되었습니다.' });
+    onSuccess: (data) => {
+      appToast.success({ message: '할 일이 성공적으로 수정되었습니다.' });
+      // 옵션으로 전달된 onSuccess 콜백 실행
+      options?.onSuccess?.(data);
     },
     /**
      * @description mutation이 성공하든 실패하든, 완료된 후에 항상 실행됩니다.

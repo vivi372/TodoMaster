@@ -79,7 +79,7 @@ export function Modal({ open, onOpenChange, children, className }: ModalProps) {
   return (
     <ModalContext.Provider value={{ open, onOpenChange }}>
       {/* 고정된 화면 오버레이 (z-index 50) */}
-      <div className={cn('fixed inset-0 z-50 flex items-center justify-center', className)}>
+      <div className={cn('fixed inset-0 z-[999] flex items-center justify-center', className)}>
         {/* Backdrop (배경) */}
         <div
           className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0"

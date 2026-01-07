@@ -82,9 +82,12 @@ pnpm-debug.log*
 # ------------------------------------
 # Gemini CLI 설정 파일 제외
 # ------------------------------------
+#.gemini/
+#.env
 .gemini/
 .env
 log.md
+# /gemini-context/
 # /gemini-context/
 
 /.metadata/

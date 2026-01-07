@@ -27,7 +27,7 @@
     -->
     <insert id="insertTodo" parameterType="com.todoMaster.todo.vo.TodoVO">
         <selectKey keyProperty="todoId" resultType="Long" order="BEFORE">
-            SELECT SEQ_TODO_ID.NEXTVAL FROM DUAL
+            SELECT TODO_SEQ.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO TODO (
             TODO_ID, USER_ID, CATEGORY_ID, TITLE, MEMO, 

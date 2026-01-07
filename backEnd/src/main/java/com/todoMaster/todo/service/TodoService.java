@@ -46,7 +46,9 @@ public class TodoService {
                 .memo(requestDto.getMemo())
                 .dueDate(requestDto.getDueDate())
                 // DB 스키마 변경에 따라, isCompleted의 기본값을 boolean false 대신 문자열 'N'으로 설정합니다.
-                .isCompleted("N") 
+                .isCompleted("N")
+                // Todo 생성 요청 DTO에서 받은 priority 값을 TodoVO에 설정합니다.
+                .priority(requestDto.getPriority())
                 .build();
 
         todoMapper.insertTodo(newTodo);
@@ -115,6 +117,10 @@ public class TodoService {
         }
         if (requestDto.getDueDate() != null) {
             todo.setDueDate(requestDto.getDueDate());
+        }
+        // 요청 DTO에 priority 값이 제공된 경우에만 TodoVO의 priority를 업데이트합니다.
+        if (requestDto.getPriority() != null) {
+            todo.setPriority(requestDto.getPriority());
         }
 
         // 3. 데이터베이스에 수정된 내용을 반영합니다.

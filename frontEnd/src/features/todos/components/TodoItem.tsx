@@ -105,12 +105,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   // isCompleted가 'N'이고 마감일이 지났을 때 overdue로 처리합니다.
   const isOverdue = todo.dueDate && new Date(todo.dueDate) < new Date() && todo.isCompleted === 'N';
 
-  /**
-   * @description 아직 개발되지 않은 기능에 대한 임시 토스트 메시지를 표시하는 핸들러.
-   */
-  const handleFutureFeatureClick = useCallback((featureName: string) => {
-    appToast.info({ message: `${featureName} 기능은 추후 개발 예정입니다.` });
-  }, []);
+
 
   return (
     <motion.div
@@ -180,7 +175,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="flex items-center gap-1 text-blue-500 cursor-pointer"
-              onClick={() => handleFutureFeatureClick('반복 설정')}
+              onClick={() => appToast.info({ message: '반복 설정 기능은 추후 개발 예정입니다.' })}
               title="반복 설정"
             >
               <Repeat className="h-3.5 w-3.5" />
@@ -191,7 +186,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="flex items-center gap-1 text-purple-500 cursor-pointer"
-              onClick={() => handleFutureFeatureClick('알림 설정')}
+              onClick={() => appToast.info({ message: '알림 설정 기능은 추후 개발 예정입니다.' })}
               title="알림 설정"
             >
               <BellRing className="h-3.5 w-3.5" />

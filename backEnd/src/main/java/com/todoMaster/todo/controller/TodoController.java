@@ -35,6 +35,7 @@ public class TodoController {
     ) {
         // 현재 인증된 사용자의 ID를 서비스 레이어에서 가져옵니다.
         Long userId = todoService.getAuthenticatedUserId();
+        // Todo 생성 서비스 호출 시 requestDto에 포함된 priority 값을 함께 전달합니다.
         TodoResponseDto responseDto = todoService.createTodo(requestDto, userId);
         // 생성 성공 시, HTTP 201 Created 상태와 함께 응답을 반환합니다.
         return new ResponseEntity<>(ApiResponse.success("Todo가 성공적으로 생성되었습니다.", responseDto), HttpStatus.CREATED);
@@ -77,6 +78,7 @@ public class TodoController {
             @Valid @RequestBody TodoUpdateRequestDto requestDto
     ) {
         Long userId = todoService.getAuthenticatedUserId();
+        // Todo 수정 서비스 호출 시 requestDto에 포함된 priority 값을 함께 전달합니다.
         TodoResponseDto responseDto = todoService.updateTodo(todoId, requestDto, userId);
         return ResponseEntity.ok(ApiResponse.success("Todo가 성공적으로 수정되었습니다.", responseDto));
     }
