@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import type { MenuItem } from './getMenu';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import HaruLog from '@/shared/ui/HaruLog';
 
 export function Sidebar({ menu }: { menu: MenuItem[] }) {
   const location = useLocation();
@@ -28,10 +29,8 @@ export function Sidebar({ menu }: { menu: MenuItem[] }) {
       <div className="h-16 flex items-center justify-between px-4 border-b border-border">
         {!collapsed && (
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-amber-400 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg text-foreground">Todori</span>
+            <HaruLog />
+            <span className="font-bold text-lg text-foreground">하루로그</span>
           </Link>
         )}
         <Button
