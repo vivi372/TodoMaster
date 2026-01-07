@@ -1,7 +1,7 @@
 ﻿import { useMutation, type UseMutationResult } from '@tanstack/react-query';
 import { userApi } from '../api/userApi';
 import { queryClient } from '@/app/queryClient';
-import { QUERY_KEYS } from '@/shared/const/queryKeys';
+import { userQueryKeys } from '@/shared/const/queryKeys';
 
 /**
  * 커스텀 훅 useAcknowledgeImageWarning
@@ -17,7 +17,7 @@ export const useAcknowledgeImageWarning = (): UseMutationResult<void, Error, voi
 
     // 이미지 경고 확인 여부 변경후 headerProfile 캐시를 무효화해 다시 가져오기
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_SUMMARY_PROFILE] });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.summary() });
     },
   });
 };

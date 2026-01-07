@@ -18,11 +18,14 @@ import { AppLayout } from '@/layouts/AppLayout';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import ChangeEmailPage from '@/pages/profile/changeEmail/ChangeEmailPage';
 import ChangePasswordPage from '@/pages/profile/changePassword/ChangePasswordPage';
+import TodoDetailPage from '@/pages/todos/TodoDetailPage'; //* Todo 상세 페이지
 import ProfileEditPage from '@/pages/profile/edit/ProfileEditPage';
 
 /**
  * RootRedirect 컴포넌트:
  * 애플리케이션의 루트 경로('/')에 접근했을 때, 인증 상태에 따라 경로를 분기합니다.
+ *
+ * @returns {React.ReactElement} 인증 상태에 따라 `/todos` 또는 `/login`으로 리디렉션하는 Navigate 컴포넌트
  */
 function RootRedirect() {
   // 전역 상태에서 Access Token 존재 여부로 인증 상태를 확인합니다.
@@ -113,6 +116,7 @@ const routes: RouteObject[] = [
     ),
     children: [
       { path: '/todos', element: <TodoPage /> },
+      { path: '/todos/:todoId', element: <TodoDetailPage /> }, //* Todo 상세 페이지
       { path: '/profile', element: <ProfilePage /> },
       { path: '/profile/edit', element: <ProfileEditPage /> },
       { path: '/profile/changeEmail', element: <ChangeEmailPage /> },

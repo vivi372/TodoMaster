@@ -1,6 +1,15 @@
 import { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Flag, Repeat, BellRing, MoreVertical, Trash2, Edit } from 'lucide-react';
+import {
+  Calendar,
+  Flag,
+  Repeat,
+  BellRing,
+  MoreVertical,
+  Trash2,
+  Edit,
+  StickyNote,
+} from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/ui/badge';
@@ -13,6 +22,7 @@ import {
 } from '@/shared/ui/dropdown-menu';
 import type { TodoResponse } from '@/features/todos/api/todoApi';
 import { appToast } from '@/shared/utils/appToast';
+import { useNavigate } from 'react-router-dom'; // useNavigate 임포트
 
 /**
  * @description 우선순위 키 타입을 정의합니다.
@@ -72,6 +82,8 @@ export interface TodoItemProps {
  * @param {TodoItemProps} props - todo 데이터 및 이벤트 핸들러
  */
 export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
+  const navigate = useNavigate(); // useNavigate 훅 초기화
+
   /**
    * @description 백엔드로부터 받은 숫자 priority 값을 'low', 'medium', 'high' 키로 변환합니다.
    * 이 키를 사용하여 priorityConfig에서 해당 우선순위의 라벨과 색상 정보를 가져옵니다.
@@ -105,19 +117,27 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   // isCompleted가 'N'이고 마감일이 지났을 때 overdue로 처리합니다.
   const isOverdue = todo.dueDate && new Date(todo.dueDate) < new Date() && todo.isCompleted === 'N';
 
-
-
   return (
     <motion.div
       layout
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'group bg-white rounded-xl border border-border p-4 transition-all hover:shadow-md',
+        'group bg-white rounded-xl border border-border p-4 transition-all hover:shadow-md cursor-pointer', // cursor-pointer 추가
         // isCompleted가 'Y'일 때 스타일을 적용합니다.
         todo.isCompleted === 'Y' && 'opacity-60',
         isOverdue && 'border-red-200 bg-red-50/30',
       )}
+      onClick={(e) => {
+        // DropdownMenuTrigger 클릭 시 상세 페이지로 이동 방지
+        const target = e.target as HTMLElement;
+        const isDropdownClick = target.closest('.group-dropdown-menu'); // DropdownMenu에 클래스 추가 예정
+
+        if (!isDropdownClick) {
+          e.stopPropagation(); // 이벤트 버블링 방지
+          navigate(`/todos/${todo.todoId}`);
+        }
+      }}
     >
       <div className="flex items-start gap-3">
         {/* 완료/미완료 토글 체크박스 */}
@@ -192,6 +212,18 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
               <BellRing className="h-3.5 w-3.5" />
             </motion.div>
 
+            {/* 메모 아이콘 */}
+            {todo.memo && (
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex items-center gap-1 text-green-500"
+                //title={`메모: ${todo.memo}`}
+              >
+                <StickyNote className="h-3.5 w-3.5" />
+              </motion.div>
+            )}
+
             {/* 카테고리 (임시) */}
             <Badge variant="secondary" className="text-xs py-0 h-5">
               기본
@@ -201,7 +233,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
 
         {/* 더보기 메뉴 (수정/삭제) */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild className="group-dropdown-menu">
             <Button
               variant="ghost"
               size="icon"

@@ -3,7 +3,7 @@ import { userApi } from '../api/userApi';
 import type { AppError } from '@/shared/error/types';
 import { appToast } from '@/shared/utils/appToast';
 import { useNavigate } from 'react-router-dom';
-import { QUERY_KEYS } from '@/shared/const/queryKeys';
+import { authQueryKeys, userQueryKeys } from '@/shared/const/queryKeys';
 import type { ExecuteEmailChangeBody } from '../types/userTypes';
 
 type useExecuteEmailChangeProps = {
@@ -25,8 +25,8 @@ export const useExecuteEmailChange = ({ onError }: useExecuteEmailChangeProps) =
       appToast.success({ message: '이메일이 성공적으로 변경되었습니다!' });
 
       // Invalidate user-related queries to refetch the data
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_SUMMARY_PROFILE] });
+      queryClient.invalidateQueries({ queryKey: authQueryKeys.profile() });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.summary() });
 
       navigate('/profile');
     },

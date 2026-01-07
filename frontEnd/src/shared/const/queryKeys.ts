@@ -17,16 +17,23 @@
  *   },
  * };
  */
-export const QUERY_KEYS = {
-  /**
-   * @description 사용자 정보 관련 쿼리 키
-   */
-  USER_PROFILE: 'myProfile',
-  USER_SUMMARY_PROFILE: 'headerProfile',
-
-  /**
-   * @description Todo 관련 쿼리 키
-   */
-  todos: 'todos', // Todo 목록
-  todo: 'todo', // Todo 상세 정보
+export const todoQueryKeys = {
+  all: ['todos'] as const,
+  lists: () => [...todoQueryKeys.all, 'list'] as const,
+  list: (filters: string) => [...todoQueryKeys.lists(), { filters }] as const,
+  details: () => [...todoQueryKeys.all, 'detail'] as const,
+  detail: (id: number) => [...todoQueryKeys.details(), id] as const,
 };
+
+export const userQueryKeys = {
+  all: ['users'] as const,
+  details: () => [...userQueryKeys.all, 'detail'] as const,
+  detail: (id: number) => [...userQueryKeys.details(), id] as const,
+  summary: () => [...userQueryKeys.all, 'summary'] as const,
+};
+
+export const authQueryKeys = {
+  all: ['auth'] as const,
+  profile: () => [...authQueryKeys.all, 'profile'] as const,
+};
+

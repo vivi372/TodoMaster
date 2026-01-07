@@ -7,7 +7,7 @@ import {
   type CreateTodoRequest,
   type UpdateTodoRequest,
 } from '@/features/todos/api/todoApi';
-import { QUERY_KEYS } from '@/shared/const/queryKeys';
+import { todoQueryKeys } from '@/shared/const/queryKeys';
 import { appToast } from '@/shared/utils/appToast';
 
 /**
@@ -17,7 +17,7 @@ import { appToast } from '@/shared/utils/appToast';
 export const useGetTodos = () => {
   return useQuery<TodoResponse[], Error>({
     // queryKey: Todo 목록을 식별하는 키
-    queryKey: [QUERY_KEYS.todos],
+    queryKey: todoQueryKeys.all,
     // queryFn: 데이터를 가져오는 비동기 함수
     queryFn: todoApi.getTodoList,
   });
@@ -35,7 +35,7 @@ export const useCreateTodo = (options?: { onSuccess?: (data: TodoResponse) => vo
     mutationFn: todoApi.createTodo,
     onSuccess: (data) => {
       // Todo 목록 쿼리를 무효화하여 최신 데이터로 갱신
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.todos] });
+      queryClient.invalidateQueries({ queryKey: todoQueryKeys.all });
       // 성공 토스트 메시지 표시
       appToast.success({ message: 'Todo가 성공적으로 추가되었습니다.' });
       // 옵션으로 전달된 onSuccess 콜백 실행
@@ -49,16 +49,10 @@ export const useCreateTodo = (options?: { onSuccess?: (data: TodoResponse) => vo
  * @description Todo를 수정하는 useMutation 커스텀 훅.
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useUpdateTodo = (options?: {
-  onSuccess?: (data: TodoResponse) => void;
-}) => {
+export const useUpdateTodo = (options?: { onSuccess?: (data: TodoResponse) => void }) => {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    TodoResponse,
-    Error,
-    { id: number; payload: UpdateTodoRequest }
-  >({
+  return useMutation<TodoResponse, Error, { id: number; payload: UpdateTodoRequest }>({
     // id와 payload를 받아 API 함수 호출
     mutationFn: ({ id, payload }) => todoApi.updateTodo(id, payload),
     /**
@@ -81,7 +75,7 @@ export const useUpdateTodo = (options?: {
      * 5. 결과적으로, 완료 상태가 변경된 Todo 항목이 UI 상에서 '진행 중' 목록과 '완료됨' 목록 사이를 이동하게 됩니다.
      */
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.todos] });
+      queryClient.invalidateQueries({ queryKey: todoQueryKeys.all });
     },
     // onError는 queryClient에 설정된 전역 에러 핸들러가 처리합니다.
   });
@@ -89,18 +83,26 @@ export const useUpdateTodo = (options?: {
 
 /**
  * @description Todo를 삭제하는 useMutation 커스텀 훅.
+ * 삭제 성공 시, 전체 Todo 목록 쿼리와 삭제된 개별 Todo의 상세 쿼리를 무효화합니다.
+ * 또한, 성공 토스트 메시지 중복 출력을 방지하기 위해 해당 훅 내부의 토스트 호출은 제거되었습니다.
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useDeleteTodo = () => {
+export const useDeleteTodo = (options?: { onSuccess?: (deletedId: number) => void }) => {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, number>({
-    mutationFn: todoApi.deleteTodo,
-    onSuccess: () => {
-      // Todo 목록 쿼리를 무효화하여 최신 데이터로 갱신
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.todos] });
-      // 성공 토스트 메시지 표시
-      appToast.success({ message: 'Todo가 성공적으로 삭제되었습니다.' });
+  return useMutation<number, Error, number>({
+    // 제네릭 타입을 void에서 number로 변경 (삭제된 ID 반환)
+    mutationFn: async (todoId: number) => {
+      // Todo 삭제 API 호출
+      await todoApi.deleteTodo(todoId);
+      return todoId; // 삭제된 todoId를 onSuccess 콜백으로 전달하기 위해 반환
+    },
+    onSuccess: (deletedId) => {
+      // Todo 목록 쿼리를 무효화하여 최신 데이터로 갱신 (전체 리스트 업데이트)
+      queryClient.invalidateQueries({ queryKey: todoQueryKeys.lists() });
+
+      // 옵션으로 전달된 onSuccess 콜백 실행
+      options?.onSuccess?.(deletedId);
     },
     // onError는 queryClient에 설정된 전역 에러 핸들러가 처리
   });

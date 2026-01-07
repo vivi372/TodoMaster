@@ -3,6 +3,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { userApi } from '../api/userApi';
 import { authStore } from '@/features/auth/store/authStore';
 import type { UserSummaryProfileResponse } from '../types/userTypes';
+import { userQueryKeys } from '@/shared/const/queryKeys';
 
 // 커스텀 훅의 반환 타입을 정의합니다.
 // UseQueryResult에 TData(UserSummaryProfileResponse)와 TError(Error)를 명시
@@ -20,7 +21,7 @@ export const useHeaderProfile = (): HeaderProfileQueryResult => {
   return useQuery({
     // 1. queryKey: 쿼리를 식별하는 고유 키
     // ['headerProfile'] 키를 사용하여 이 쿼리를 캐시에 저장하고, 나중에 무효화(invalidate)하거나 재요청할 때 사용합니다.
-    queryKey: ['headerProfile'],
+    queryKey: userQueryKeys.summary(),
 
     // 2. queryFn: 데이터를 가져오는 비동기 함수
     // userApi.getUserProfile 함수가 실제로 서버와 통신하여 사용자 요약 프로필 데이터를 반환합니다.

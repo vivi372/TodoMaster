@@ -3,7 +3,7 @@ import { userApi } from '../api/userApi';
 import { commonApi } from '@/shared/api/commonApi';
 import { uploadToS3 } from '@/shared/lib/utils/uploadToS3';
 import type { ProfileEditSchemaValues } from '../schema/profileEditSchema';
-import { QUERY_KEYS } from '@/shared/const/queryKeys';
+import { authQueryKeys, userQueryKeys } from '@/shared/const/queryKeys';
 
 export function useUpdateMyInfo() {
   const queryClient = useQueryClient();
@@ -57,8 +57,8 @@ export function useUpdateMyInfo() {
     },
     onSuccess: () => {
       // Invalidate and refetch the profile data to see the changes
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_PROFILE] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_SUMMARY_PROFILE] });
+      queryClient.invalidateQueries({ queryKey: authQueryKeys.profile() });
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.summary() });
     },
   });
 
