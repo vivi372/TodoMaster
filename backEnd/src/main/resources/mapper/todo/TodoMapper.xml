@@ -12,13 +12,28 @@
         <result property="title" column="TITLE"/>
         <result property="memo" column="MEMO"/>
         <result property="priority" column="PRIORITY"/>
-        <!-- IS_COMPLETED 컬럼은 'Y' 또는 'N' 값을 가지는 VARCHAR 타입이며, String 타입의 isCompleted 필드와 매핑됩니다. -->
         <result property="isCompleted" column="IS_COMPLETED"/>
         <result property="dueDate" column="DUE_DATE"/>
         <result property="repeatRuleId" column="REPEAT_RULE_ID"/>
         <result property="completedAt" column="COMPLETED_AT"/>
         <result property="createdAt" column="CREATED_AT"/>
         <result property="updatedAt" column="UPDATED_AT"/>
+    </resultMap>
+
+    <!-- 
+         Todo와 연관된 반복 규칙을 함께 조회하기 위한 ResultMap입니다.
+        - 기존 todoResultMap을 상속받아 기본 Todo 정보를 매핑합니다.
+        - <association> 태그를 사용하여 TODO_REPEAT_RULE 테이블의 결과를 TodoVO의 repeatVO 필드에 매핑합니다.
+        - LEFT JOIN 시, REPEAT_RULE_ID가 NULL인 경우(반복이 아닌 Todo) association은 생성되지 않아 repeatVO 필드는 null이 됩니다.
+     -->
+    <resultMap id="todoWithRepeatResultMap" type="com.todoMaster.todo.vo.TodoVO" extends="todoResultMap">
+        <association property="repeatVO" javaType="com.todoMaster.repeat.vo.RepeatVO" >
+            <id property="repeatRuleId" column="RR_REPEAT_RULE_ID"/>
+            <result property="type" column="RR_TYPE"/>
+            <result property="intervalValue" column="RR_INTERVAL_VALUE"/>
+            <result property="weekDays" column="RR_WEEK_DAYS"/>
+            <result property="endDate" column="RR_END_DATE"/>
+        </association>
     </resultMap>
 
     <!-- 
@@ -50,22 +65,41 @@
     </insert>
 
     <!-- 
-        Todo ID를 기준으로 특정 Todo 항목을 조회합니다.
+        Todo ID를 기준으로 특정 Todo 항목을 '반복 정보'와 함께 조회합니다.
+        - LEFT JOIN: TODO_REPEAT_RULE 테이블과 조인하여 반복 규칙 정보를 가져옵니다.
+        - 컬럼 별칭(Alias): 조인된 테이블의 컬럼명을 별칭(예: RR_TYPE)으로 지정하여 기본 컬럼과의 충돌을 방지합니다.
+        - resultMap: 새로 정의한 'todoWithRepeatResultMap'을 사용하여 조인된 결과를 VO와 그 안의 객체에 매핑합니다.
     -->
-    <select id="findTodoById" resultMap="todoResultMap" parameterType="long">
-        SELECT *
-        FROM TODO
-        WHERE TODO_ID = #{todoId}
+    <select id="findTodoById" resultMap="todoWithRepeatResultMap" parameterType="long">
+        SELECT 
+            T.*,
+            RR.TYPE AS RR_TYPE,
+            RR.INTERVAL_VALUE AS RR_INTERVAL_VALUE,
+            RR.WEEK_DAYS AS RR_WEEK_DAYS,
+            RR.END_DATE AS RR_END_DATE,
+            RR.REPEAT_RULE_ID AS RR_REPEAT_RULE_ID
+        FROM TODO T
+        LEFT JOIN TODO_REPEAT_RULE RR ON T.REPEAT_RULE_ID = RR.REPEAT_RULE_ID
+        WHERE T.TODO_ID = #{todoId}
     </select>
 
     <!-- 
-        특정 사용자의 모든 Todo 항목을 최신순으로 조회합니다.
+        특정 사용자의 모든 Todo 항목을 '반복 정보'와 함께 최신순으로 조회합니다.
+        - LEFT JOIN: TODO_REPEAT_RULE 테이블과 조인하여 각 Todo의 반복 규칙 정보를 함께 가져옵니다.
+        - resultMap: 'todoWithRepeatResultMap'을 사용하여 조인된 결과를 올바르게 매핑합니다.
     -->
-    <select id="findTodosByUserId" resultMap="todoResultMap" parameterType="long">
-        SELECT *
-        FROM TODO
-        WHERE USER_ID = #{userId}
-        ORDER BY CREATED_AT DESC
+    <select id="findTodosByUserId" resultMap="todoWithRepeatResultMap" parameterType="long">
+        SELECT 
+            T.*,
+            RR.TYPE AS RR_TYPE,
+            RR.INTERVAL_VALUE AS RR_INTERVAL_VALUE,
+            RR.WEEK_DAYS AS RR_WEEK_DAYS,
+            RR.END_DATE AS RR_END_DATE,
+            RR.REPEAT_RULE_ID AS RR_REPEAT_RULE_ID
+        FROM TODO T
+        LEFT JOIN TODO_REPEAT_RULE RR ON T.REPEAT_RULE_ID = RR.REPEAT_RULE_ID
+        WHERE T.USER_ID = #{userId}
+        ORDER BY T.CREATED_AT DESC
     </select>
 
     <!-- 
@@ -78,28 +112,23 @@
             <if test="title != null">
                 TITLE = #{title},
             </if>
-            <if test="memo != null">
-                MEMO = #{memo},
-            </if>
+            <!-- MEMO는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
+            MEMO = #{memo},
             <!-- isCompleted 필드는 'Y' 또는 'N' 문자열 값으로 업데이트됩니다. -->
             <if test="isCompleted != null">
                 IS_COMPLETED = #{isCompleted},
             </if>
-            <if test="dueDate != null">
-                DUE_DATE = #{dueDate},
-            </if>
-            <if test="categoryId != null">
-                CATEGORY_ID = #{categoryId},
-            </if>
-            <if test="priority != null">
-                PRIORITY = #{priority},
-            </if>
+            <!-- DUE_DATE는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
+            DUE_DATE = #{dueDate},
+            <!-- CATEGORY_ID는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
+            CATEGORY_ID = #{categoryId},
+            <!-- PRIORITY는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
+            PRIORITY = #{priority},
             <if test="repeatRuleId != null">
                 REPEAT_RULE_ID = #{repeatRuleId},
             </if>
-            <if test="completedAt != null">
-                COMPLETED_AT = #{completedAt},
-            </if>
+            <!-- COMPLETED_AT은 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
+            COMPLETED_AT = #{completedAt},
             UPDATED_AT = SYSDATE
         </set>
         WHERE TODO_ID = #{todoId}
@@ -139,5 +168,89 @@
         FROM TODO
         WHERE USER_ID = #{userId}
     </select>
+
+    <!-- 
+        여러 개의 Todo 항목을 배치로 추가합니다.
+        Oracle의 경우 INSERT ALL 문을 사용하여 여러 행을 한 번에 삽입할 수 있습니다.
+    -->
+    <insert id="insertTodos" parameterType="java.util.List">
+        INSERT ALL
+        <foreach collection="list" item="todo" separator=" ">
+        INTO TODO (
+            TODO_ID, USER_ID, CATEGORY_ID, TITLE, MEMO,
+            PRIORITY, IS_COMPLETED, DUE_DATE, REPEAT_RULE_ID,
+            CREATED_AT
+        )
+        VALUES (
+            TODO_SEQ.NEXTVAL,
+            #{todo.userId},
+            #{todo.categoryId},
+            #{todo.title},
+            #{todo.memo},
+            #{todo.priority},
+            #{todo.isCompleted},
+            #{todo.dueDate},
+            #{todo.repeatRuleId},
+            SYSDATE
+        )
+        </foreach>
+        SELECT * FROM DUAL
+    </insert>
+
+    <!-- 반복 규칙 ID로 Todo 항목 조회 -->
+    <select id="findTodosByRepeatRuleId" resultMap="todoResultMap" parameterType="long">
+        SELECT *
+        FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+    </select>
+
+    <!-- 특정 날짜 이후의 미완료 반복 Todo 항목 삭제 -->
+    <delete id="deleteTodosAfterDate" parameterType="map">
+        DELETE FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+        AND DUE_DATE > #{date}
+        AND IS_COMPLETED = 'N'
+    </delete>
+
+    <!-- 특정 날짜 이후의 반복 Todo 항목 조회 -->
+    <select id="findTodosByRepeatRuleIdAndDate" resultMap="todoResultMap" parameterType="map">
+        SELECT *
+        FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+        AND DUE_DATE > #{date}
+    </select>
+
+    <!-- 특정 날짜를 포함하여 이후의 반복 Todo 항목 조회 -->
+    <select id="findTodosByRepeatRuleIdOnOrAfterDate" resultMap="todoResultMap" parameterType="map">
+        SELECT *
+        FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+        AND DUE_DATE >= #{date}
+        ORDER BY DUE_DATE ASC
+    </select>
+
+    <!-- 반복 규칙 변경 시, Todo의 마감일과 규칙 ID만 선택적으로 업데이트 -->
+    <update id="updateTodoDueDateAndRepeatRule" parameterType="map">
+        UPDATE TODO
+        SET
+            DUE_DATE = #{dueDate},
+            REPEAT_RULE_ID = #{repeatRuleId},
+            UPDATED_AT = SYSDATE
+        WHERE
+            TODO_ID = #{todoId}
+    </update>
+
+    <!--
+        특정 Todo의 마감일(DUE_DATE)을 NULL로 설정합니다.
+        반복 일정의 '이후 일정 삭제' 시나리오에서 현재 항목의 마감일만 제거할 때 사용됩니다.
+    -->
+    <update id="setDueDateToNull" parameterType="long">
+        UPDATE TODO
+        SET
+            DUE_DATE = NULL,
+            UPDATED_AT = SYSDATE
+        WHERE
+            TODO_ID = #{todoId}
+    </update>
 
 </mapper>

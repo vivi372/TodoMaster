@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.todoMaster.repeat.mapper.RepeatMapper">
+
+    <!--
+        ================================================================================
+        ResultMap: 데이터베이스 결과와 VO 객체 매핑
+        ================================================================================
+    -->
+
+    <!-- RepeatVO 매핑: DB의 스네이크 케이스 컬럼명과 VO의 카멜 케이스 필드명을 연결합니다. -->
+    <resultMap id="repeatRuleResultMap" type="com.todoMaster.repeat.vo.RepeatVO">
+        <id property="repeatRuleId" column="REPEAT_RULE_ID"/>
+        <result property="type" column="TYPE"/>
+        <result property="intervalValue" column="INTERVAL_VALUE"/>
+        <result property="weekDays" column="WEEK_DAYS"/>
+        <result property="endDate" column="END_DATE"/>
+        <result property="createdAt" column="CREATED_AT"/>
+    </resultMap>
+
+
+    <!--
+        ================================================================================
+        반복 규칙 (Repeat Rule) CRUD
+        ================================================================================
+    -->
+
+    <!-- 
+        새로운 반복 규칙을 생성합니다.
+        - useGeneratedKeys, keyProperty: Oracle에서는 직접적으로 동작하지 않으므로 selectKey를 사용합니다.
+        - selectKey: INSERT 실행 전에 시퀀스(TODO_REPEAT_RULE_SEQ)를 통해 새로운 ID를 조회하여 repeatRuleId 필드에 설정합니다.
+    -->
+    <insert id="insertRepeatRule" parameterType="com.todoMaster.repeat.vo.RepeatVO">
+        <selectKey keyProperty="repeatRuleId" resultType="long" order="BEFORE">
+            SELECT TODO_REPEAT_RULE_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TODO_REPEAT_RULE (
+            REPEAT_RULE_ID,
+            TYPE,
+            INTERVAL_VALUE,
+            WEEK_DAYS,
+            END_DATE,
+            CREATED_AT
+        ) VALUES (
+            #{repeatRuleId},
+            #{type},
+            #{intervalValue},
+            #{weekDays, jdbcType=VARCHAR},
+            #{endDate, jdbcType=DATE},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 
+        반복 규칙의 고유 ID(PK)를 사용하여 특정 반복 규칙 정보를 조회합니다.
+        - parameterType: long (또는 java.lang.Long)
+        - resultMap: repeatRuleResultMap을 사용하여 조회 결과를 RepeatVO 객체에 매핑합니다.
+    -->
+    <select id="findRepeatRuleById" parameterType="long" resultMap="repeatRuleResultMap">
+        SELECT
+            REPEAT_RULE_ID,
+            TYPE,
+            INTERVAL_VALUE,
+            WEEK_DAYS,
+            END_DATE,
+            CREATED_AT
+        FROM
+            TODO_REPEAT_RULE
+        WHERE
+            REPEAT_RULE_ID = #{repeatRuleId}
+    </select>
+    
+    <!-- 
+        기존 반복 규칙의 정보를 수정합니다.
+        - 동적 SQL(<set>, <if>)을 사용하여 파라미터로 전달된 필드가 null이 아닌 경우에만 UPDATE 구문에 포함시킵니다.
+          이를 통해 특정 필드만 선택적으로 변경할 수 있습니다.
+    -->
+    <update id="updateRepeatRule" parameterType="com.todoMaster.repeat.vo.RepeatVO">
+        UPDATE
+            TODO_REPEAT_RULE
+        <set>
+            <if test="type != null">
+                TYPE = #{type},
+            </if>
+            <if test="intervalValue != null">
+                INTERVAL_VALUE = #{intervalValue},
+            </if>
+            <if test="weekDays != null">
+                WEEK_DAYS = #{weekDays},
+            </if>
+            <if test="endDate != null">
+                END_DATE = #{endDate},
+            </if>
+        </set>
+        WHERE
+            REPEAT_RULE_ID = #{repeatRuleId}
+    </update>
+
+    <!-- 
+        반복 규칙의 고유 ID(PK)를 사용하여 특정 반복 규칙을 삭제합니다.
+    -->
+    <delete id="deleteRepeatRule" parameterType="long">
+        DELETE FROM
+            TODO_REPEAT_RULE
+        WHERE
+            REPEAT_RULE_ID = #{repeatRuleId}
+    </delete>
+
+</mapper>

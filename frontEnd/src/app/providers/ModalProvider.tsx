@@ -1,71 +1,89 @@
-﻿import { useMessageActions } from '../../shared/hooks/useMessageActions';
+﻿'use client';
+
+import { useMessageActions } from '../../shared/hooks/useMessageActions';
 import { useModalStore } from '../../shared/store/modalStore';
-import { AlertModal, ConfirmModal } from '../../shared/ui/modal'; // Modal.tsx에서 정의된 ConfirmModal
+import { AlertModal, ConfirmModal } from '../../shared/ui/modal';
 import { useShallow } from 'zustand/react/shallow';
 
 /**
- * Zustand Store의 상태에 따라 모달을 렌더링하는 컴포넌트 (App.tsx에 배치)
+ * Zustand Store의 상태에 따라 모달을 렌더링하는 전역 컴포넌트.
+ * 이 컴포넌트는 앱의 최상단(예: App.tsx)에 한 번만 배치되어야 합니다.
+ *
+ * 두 종류의 모달을 처리합니다:
+ * 1. `alert`/`confirm`: Promise 기반의 간단한 알림/확인 모달.
+ * 2. **Custom Component Modals**: `useModal().showModal(Component, props)`를 통해
+ *    호출되는 모든 사용자 정의 React 컴포넌트 모달.
  */
 export function ModalProvider() {
-  const { modalData, handleClose } = useModalStore(
+  // =================================================================
+  // 1. Zustand 스토어에서 모달 상태 감지
+  // =================================================================
+  const {
+    modalData,
+    handleClose,
+    modalComponent: Component, // 렌더링할 사용자 정의 컴포넌트
+    props, // 사용자 정의 컴포넌트에 전달될 props
+    closeModal, // 사용자 정의 컴포넌트를 닫는 함수
+  } = useModalStore(
     useShallow((state) => ({
       modalData: state.modalData,
       handleClose: state.handleClose,
+      modalComponent: state.modalComponent,
+      props: state.props,
+      closeModal: state.closeModal,
     })),
   );
-  const { executeAction } = useMessageActions(); // useErrorActions 훅 사용
+  const { executeAction } = useMessageActions();
 
+  // =================================================================
+  // 2. 사용자 정의 컴포넌트 모달 렌더링
+  // =================================================================
+  // `modalComponent`가 스토어에 설정되어 있다면, 해당 컴포넌트를 렌더링합니다.
+  if (Component) {
+    // `showModal` 호출 시 전달된 모든 `props`와 함께,
+    // 모달 스스로 닫을 수 있도록 `closeModal` 함수를 추가로 전달합니다.
+    return <Component {...props} closeModal={closeModal} />;
+  }
+
+  // =================================================================
+  // 3. `alert`/`confirm` 모달 렌더링 (기존 로직)
+  // =================================================================
   const open = !!modalData;
   if (!modalData) {
     return null;
   }
 
-  // 모달이 닫힐 때 공통 핸들러를 호출합니다.
   const handleModalClose = (confirmed: boolean) => handleClose(confirmed);
-
-  // modalData에서 type을 분리하고 나머지 데이터는 rest로 전달
   const { type, ...restData } = modalData;
 
-  // 렌더링할 모달 컴포넌트 결정
   let ModalToRender: React.ElementType | null = null;
   let handlerProps = {};
 
-  // 🟢 Confirm 모달의 최종 '확인' 처리
   const handleConfirmAction = () => {
-    // 1. Store의 handleClose 실행 (Promise resolve, 모달 닫기)
     handleModalClose(true);
-
-    // 2. Action이 있을때만 실행
     if (modalData?.action) {
-      executeAction(modalData.action); // 🟢 액션 실행
+      executeAction(modalData.action);
     }
   };
 
   if (type === 'alert') {
     ModalToRender = AlertModal;
-    // Alert은 onOk만 필요하며, onOk는 handleClose(true)로 연결
-    handlerProps = {
-      onOk: handleConfirmAction,
-    };
+    handlerProps = { onOk: handleConfirmAction };
   } else if (type === 'confirm') {
     ModalToRender = ConfirmModal;
-    // Confirm은 onConfirm/onCancel이 필요하며, 각각 handleClose(true/false)로 연결
     handlerProps = {
       onConfirm: handleConfirmAction,
       onCancel: () => handleModalClose(false),
     };
   } else {
-    return null; // 알 수 없는 타입
+    return null;
   }
 
   return (
     <ModalToRender
       open={open}
-      // Backdrop이나 ESC로 닫힐 때 항상 취소/닫기 처리
       onOpenChange={(isOpen: boolean) => !isOpen && handleModalClose(false)}
-      // modalData의 title, description, variant 등 전달
       {...restData}
-      // onOk, onConfirm, onCancel 등 핸들러 전달
       {...handlerProps}
     />
   );

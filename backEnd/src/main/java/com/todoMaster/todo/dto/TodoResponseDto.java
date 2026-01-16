@@ -1,11 +1,14 @@
 package com.todoMaster.todo.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.todoMaster.repeat.vo.RepeatVO;
 import com.todoMaster.todo.vo.TodoVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 /**
@@ -50,9 +53,10 @@ public class TodoResponseDto {
         private String isCompleted;
     
         /**
-         * Todo 항목의 마감 기한
+         * Todo 항목의 마감 기한 (시간 정보 없음)
          */
-        private Date dueDate;
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        private LocalDate dueDate;
     
         /**
          * Todo 항목의 생성 일시
@@ -63,6 +67,12 @@ public class TodoResponseDto {
          * Todo 항목의 마지막 수정 일시
          */
         private Date updatedAt;
+
+    /**
+     * 이 Todo와 연관된 반복 규칙 정보.
+     * 반복 설정이 없는 경우 null이 됩니다.
+     */
+    private RepeatVO repeatVO;
     
         /**
          * TodoVO 객체를 TodoResponseDto 객체로 변환하는 정적 팩토리 메서드입니다.
@@ -85,6 +95,7 @@ public class TodoResponseDto {
                     .dueDate(vo.getDueDate())
                     .createdAt(vo.getCreatedAt())
                     .updatedAt(vo.getUpdatedAt())
+                    .repeatVO(vo.getRepeatVO()) // repeatVO 필드 추가
                     .build();
         }
     }

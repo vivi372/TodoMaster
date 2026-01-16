@@ -13,24 +13,25 @@ import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/ui/badge';
 import { useGetTodos, useUpdateTodo, useDeleteTodo } from '@/features/todos/hooks/useTodos'; // createTodoMutation 제거
-import type { TodoResponse } from '@/features/todos/api/todoApi';
-import { appToast } from '@/shared/utils/appToast';
-import { useModal } from '@/shared/store/modalStore';
+import type { Todo } from '@/features/todos/api/todoApi'; // TodoResponse 대신 표준화된 Todo 타입을 사용합니다.
+import { useModalStore } from '@/shared/store/modalStore';
 import { TodoItem } from '@/features/todos/components/TodoItem';
 import { TodoFormModal } from '@/features/todos/components/TodoFormModal';
+import { RepeatDeleteModal } from '@/features/todos/components/RepeatDeleteModal';
+import { appToast } from '@/shared/utils/appToast';
 
 // --- TodoPage: 메인 페이지 컴포넌트 --- //
 export default function TodoPage() {
-  const modal = useModal(); // 공통 모달(alert, confirm)을 사용하기 위한 훅
+  // useModal 대신 useModalStore를 직접 사용하여 필요한 함수들을 가져옵니다.
+  // 이 방식이 app 전체의 모달 사용 방식과 일관성을 가집니다.
+  const { showConfirm, showModal, closeModal } = useModalStore();
   const [filterOpen, setFilterOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
 
   // TodoFormModal 상태 관리
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedTodoForEdit, setSelectedTodoForEdit] = useState<TodoResponse | undefined>(
-    undefined,
-  );
+  const [selectedTodoForEdit, setSelectedTodoForEdit] = useState<Todo | undefined>(undefined);
 
   // --- 데이터 로직 (커스텀 훅 사용) --- //
   // 1. Todo 목록 조회 (useQuery)
@@ -57,25 +58,44 @@ export default function TodoPage() {
 
   /**
    * @description Todo 항목을 삭제하는 핸들러.
-   * 삭제 전 `modal.confirm`을 통해 사용자에게 재확인 받습니다.
+   *              반복 여부에 따라 다른 삭제 로직을 실행합니다.
+   * @param {Todo} todo - 삭제할 Todo 객체.
    */
   const handleDelete = useCallback(
-    (id: number) => {
-      modal
-        .confirm({
+    (todo: Todo) => {
+      // 1. 반복 규칙이 있는 Todo인 경우
+      if (todo.repeatVO) {
+        // 반복 삭제 전용 모달(RepeatDeleteModal)을 엽니다.
+        showModal(RepeatDeleteModal, {
+          todoId: todo.todoId,
+          onSuccess: () => {
+            // 삭제 성공 시 모달을 닫습니다.
+            // useDeleteTodo 훅에서 쿼리 무효화를 처리하므로 목록은 자동으로 갱신됩니다.
+            closeModal();
+          },
+          onClose: () => {
+            // 사용자가 모달을 취소하면 그냥 닫기만 합니다.
+            closeModal();
+          },
+        });
+      } else {
+        // 2. 반복 규칙이 없는 단일 Todo인 경우
+        // 기존과 같이 confirm 모달로 사용자에게 재확인합니다.
+        showConfirm({
           title: 'Todo 삭제',
           description: '정말로 이 Todo를 삭제하시겠습니까?',
           confirmText: '삭제',
           cancelText: '취소',
           variant: 'warning',
-        })
-        .then((confirmed) => {
+        }).then((confirmed) => {
           if (confirmed) {
-            deleteTodoMutation.mutate(id);
+            // useDeleteTodo 훅의 시그니처 변경에 따라 id를 객체로 전달합니다.
+            deleteTodoMutation.mutate({ id: todo.todoId });
           }
         });
+      }
     },
-    [deleteTodoMutation, modal],
+    [deleteTodoMutation, confirm, showModal, closeModal],
   );
 
   /**
@@ -93,7 +113,7 @@ export default function TodoPage() {
    * 모달 모드를 'edit'으로 설정하고, 수정할 Todo 정보를 설정합니다.
    * @param todo - 수정할 Todo 객체
    */
-  const handleOpenEditModal = useCallback((todo: TodoResponse) => {
+  const handleOpenEditModal = useCallback((todo: Todo) => {
     setModalMode('edit');
     setSelectedTodoForEdit(todo); // 수정할 Todo 정보 설정
     setIsModalOpen(true);

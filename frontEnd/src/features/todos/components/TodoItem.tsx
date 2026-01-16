@@ -20,9 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import type { TodoResponse } from '@/features/todos/api/todoApi';
+import type { Todo } from '@/features/todos/api/todoApi'; // TodoResponse 대신 표준화된 Todo 타입을 사용합니다.
 import { appToast } from '@/shared/utils/appToast';
 import { useNavigate } from 'react-router-dom'; // useNavigate 임포트
+import { isRepeatExpired } from '@/shared/lib/utils'; // 반복 만료 여부 확인 함수 임포트
 
 /**
  * @description 우선순위 키 타입을 정의합니다.
@@ -67,14 +68,16 @@ const convertPriorityToKey = (priorityValue?: number): Priority => {
  * @description TodoItem 컴포넌트의 Props 정의
  */
 export interface TodoItemProps {
-  todo: TodoResponse; // 표시할 Todo 데이터
+  todo: Todo; // 표시할 Todo 데이터
   /**
    * 완료 상태 변경 핸들러입니다.
    * 백엔드 스키마 변경에 따라, 완료 상태를 'Y' 또는 'N'으로 전달합니다.
    */
   onToggle: (id: number, isCompleted: 'Y' | 'N') => void;
-  onDelete: (id: number) => void; // 삭제 핸들러
-  onEdit: (todo: TodoResponse) => void; // 수정 핸들러
+  // 삭제 핸들러가 id 대신 todo 객체 전체를 받도록 수정합니다.
+  // 이를 통해 부모 컴포넌트에서 반복 규칙 존재 여부를 확인할 수 있습니다.
+  onDelete: (todo: Todo) => void; // 삭제 핸들러
+  onEdit: (todo: Todo) => void; // 수정 핸들러
 }
 
 /**
@@ -115,7 +118,10 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
 
   const dueDateText = formatDueDate(todo.dueDate);
   // isCompleted가 'N'이고 마감일이 지났을 때 overdue로 처리합니다.
-  const isOverdue = todo.dueDate && new Date(todo.dueDate) < new Date() && todo.isCompleted === 'N';
+  // 시간대 문제를 피하기 위해, 현재 날짜의 시간 정보를 제거하고 비교합니다.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isOverdue = todo.dueDate && new Date(todo.dueDate) < today && todo.isCompleted === 'N';
 
   return (
     <motion.div
@@ -190,16 +196,20 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
               <span>{priorityInfo.label}</span>
             </div>
 
-            {/* 반복 (미개발) */}
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="flex items-center gap-1 text-blue-500 cursor-pointer"
-              onClick={() => appToast.info({ message: '반복 설정 기능은 추후 개발 예정입니다.' })}
-              title="반복 설정"
-            >
-              <Repeat className="h-3.5 w-3.5" />
-            </motion.div>
+            {/* 반복 아이콘 */}
+            {
+              /*
+               * [반복 아이콘 표시 조건]
+               * 1. todo.repeatVO 객체가 존재해야 합니다. (반복 설정된 Todo)
+               * 2. isRepeatExpired(todo.repeatVO) 함수가 false를 반환해야 합니다. (반복 기간이 만료되지 않음)
+               * 이 두 조건을 모두 만족할 때만 아이콘이 사용자에게 보입니다.
+               */
+              todo.repeatVO && !isRepeatExpired(todo.repeatVO) && (
+                <div className="flex items-center gap-1 text-blue-500" title="반복 설정된 할 일">
+                  <Repeat className="h-3.5 w-3.5" />
+                </div>
+              )
+            }
 
             {/* 알림 (미개발) */}
             <motion.div
@@ -243,12 +253,21 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="gap-2" onClick={() => onEdit(todo)}>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(todo);
+              }}
+            >
               <Edit className="h-4 w-4" /> 수정
             </DropdownMenuItem>
             <DropdownMenuItem
               className="gap-2 text-destructive"
-              onClick={() => onDelete(todo.todoId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(todo);
+              }}
             >
               <Trash2 className="h-4 w-4" /> 삭제
             </DropdownMenuItem>

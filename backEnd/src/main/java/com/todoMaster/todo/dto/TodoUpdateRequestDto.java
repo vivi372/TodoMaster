@@ -1,6 +1,7 @@
 package com.todoMaster.todo.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.todoMaster.repeat.dto.RepeatRuleCreateRequest;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -9,7 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 /**
  * Todo 수정을 위한 요청 데이터를 담는 DTO (Data Transfer Object) 입니다.
@@ -44,10 +45,10 @@ public class TodoUpdateRequestDto {
     /**
      * 새로 수정할 Todo 항목의 마감 기한입니다.
      */
-    // @FutureOrPresent: 날짜와 시간이 현재 또는 미래인지 확인합니다.
+    // @FutureOrPresent: 날짜가 현재 또는 미래인지 확인합니다.
     @FutureOrPresent(message = "마감 기한은 현재 또는 미래의 날짜여야 합니다.")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date dueDate;
+    private LocalDate dueDate;
 
     /**
      * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
@@ -57,4 +58,17 @@ public class TodoUpdateRequestDto {
     // @Max: 필드 값이 지정된 최대값 이하인지 확인합니다.
     @Max(value = 2, message = "우선순위는 2보다 클 수 없습니다.")
     private Integer priority;
+
+    /**
+     * 수정될 반복 규칙 정보입니다.
+     * 이 필드가 제공되면, 해당 Todo의 반복 규칙이 생성되거나 변경됩니다.
+     */
+    private RepeatRuleCreateRequest repeatRule;
+
+    /**
+     * 반복 규칙 변경 시 적용 범위를 지정합니다.
+     * "ALL": 반복 시리즈의 모든 미완료 일정 변경
+     * "AFTER_THIS": 현재 일정과 그 이후의 모든 미완료 일정 변경
+     */
+    private String changeType;
 }

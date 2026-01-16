@@ -373,6 +373,20 @@ public enum ErrorCode {
         ErrorType.WARNING,
         ErrorDisplayType.ALERT_MODAL,
         ErrorAction.REDIRECT_TO_HOME
+    ),
+
+    // ====================================================================================
+    // 🔁 반복 (REPEAT)
+    // ====================================================================================
+
+    REPEAT_RULE_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "반복 규칙을 찾을 수 없습니다.",
+        "",
+        false,
+        ErrorType.WARNING,
+        ErrorDisplayType.TOAST,
+        ErrorAction.NONE
     );
 
     private final HttpStatus status;

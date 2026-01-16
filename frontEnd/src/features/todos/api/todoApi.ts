@@ -1,123 +1,205 @@
 import { api } from '@/shared/lib/api/axios';
 import type { ApiResponse } from '@/shared/types/api';
+import type { RepeatRuleCreateRequest } from './RepeatApi';
 
-// 요청 타입
-export interface CreateTodoRequest {
-  title: string;
-  memo?: string;
-  dueDate?: string; // YYYY-MM-DD
-  /**
-   * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
-   * 백엔드에서 기본값을 설정할 수 있으므로 선택 사항입니다.
-   */
-  priority?: number;
-}
+// ============================
+// Interfaces and Types
+// ============================
 
-export interface UpdateTodoRequest {
-  title?: string;
-  memo?: string;
-  /**
-   * Todo의 완료 여부를 나타냅니다.
-   * 백엔드 API 스키마 변경에 따라 'Y'(완료) 또는 'N'(미완료) 값을 사용합니다.
-   */
-  isCompleted?: 'Y' | 'N';
-  dueDate?: string; // YYYY-MM-DD
-  /**
-   * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
-   * 부분 업데이트를 위해 선택 사항입니다.
-   */
-  priority?: number;
-}
-
-// 단일 Todo에 대한 응답 타입
-export interface TodoResponse {
+/**
+ * @description Todo 항목의 기본 구조를 정의하는 인터페이스.
+ * 백엔드의 `TodoResponseDto`와 완벽하게 일치합니다.
+ */
+export interface Todo {
   todoId: number;
   userId: number;
   title: string;
-  memo: string;
+  memo: string | null;
   /**
-   * 우선순위 값 (0: 낮음, 1: 보통, 2: 높음).
-   * 백엔드로부터 받은 숫자 값을 프론트엔드에서 문자열 키('low', 'medium', 'high')로 변환하여 사용해야 합니다.
+   * @description Todo 항목의 우선순위 (0: 낮음, 1: 보통, 2: 높음).
    */
   priority: number;
   /**
-   * Todo의 완료 여부를 나타냅니다.
-   * 백엔드 DB에는 VARCHAR(1) 타입('Y'/'N')으로 저장되므로, 프론트엔드에서도 이에 맞게 타입을 string으로 유지합니다.
-   * UI 로직에서는 이 값을 boolean으로 변환하여 사용해야 합니다. (예: isCompleted === 'Y')
+   * @description Todo의 완료 여부. 'Y'는 완료, 'N'은 미완료를 의미합니다.
    */
   isCompleted: 'Y' | 'N';
-  dueDate: string; // YYYY-MM-DD
-  createdAt: string; // ISO 8601
-  updatedAt: string; // ISO 8601
+  /**
+   * @description Todo 항목의 마감 기한. 'YYYY-MM-DD' 형식의 문자열입니다.
+   */
+  dueDate: string | null;
+  /**
+   * @description Todo 항목의 생성 일시. ISO 8601 형식의 문자열입니다. (예: '2023-01-01T12:00:00')
+   */
+  createdAt: string;
+  /**
+   * @description Todo 항목의 마지막 수정 일시. ISO 8601 형식의 문자열입니다.
+   */
+  updatedAt: string;
+  /**
+   * @description 이 Todo가 반복 일정의 일부인 경우, 반복 규칙 정보.
+   */
+  repeatVO?: RepeatVO;
 }
 
+/**
+ * @description 백엔드에서 내려오는 반복 규칙 정보.
+ * `RepeatService`의 응답과 일치합니다.
+ */
+export interface RepeatVO {
+  type: 'DAILY' | 'WEEKLY' | 'MONTHLY'; // 반복 타입
+  intervalValue: number; // 반복 간격 (예: 2일마다, 3주마다)
+  /**
+   * @description WEEKLY 타입일 경우, 반복 요일.
+   * 백엔드에서는 콤마로 구분된 문자열(예: "MON,TUE,WED")로 관리됩니다.
+   */
+  weekDays?: string;
+  endDate?: string; // YYYY-MM-DD 형식의 반복 종료일
+}
+
+/**
+ * @description Todo 생성을 위한 요청 데이터 타입.
+ * 백엔드의 `TodoCreateRequestDto`와 일치합니다.
+ */
+export interface CreateTodoRequest {
+  title: string;
+  memo?: string;
+  dueDate?: string; // 'YYYY-MM-DD'
+  priority?: number; // 0, 1, 2
+  /**
+   * @description 신규 Todo와 함께 생성될 반복 규칙 정보.
+   * 이 필드가 존재하면 반복 Todo로 생성됩니다.
+   */
+  repeatRule?: RepeatRuleCreateRequest;
+}
+
+/**
+ * @description Todo 수정을 위한 요청 데이터 타입.
+ * 백엔드의 `TodoUpdateRequestDto`와 일치합니다.
+ * 모든 필드는 선택 사항이며, 요청에 포함된 필드만 업데이트됩니다.
+ */
+export interface UpdateTodoRequest {
+  title?: string;
+  memo?: string;
+  isCompleted?: 'Y' | 'N';
+  dueDate?: string; // 'YYYY-MM-DD'
+  priority?: number; // 0, 1, 2
+  /**
+   * @description 수정 또는 새로 추가할 반복 규칙 정보.
+   */
+  repeatRule?: RepeatRuleCreateRequest;
+  /**
+   * @description 반복 규칙 변경 시 적용 범위.
+   * - "ALL": 반복 시리즈의 모든 미완료 일정 변경
+   * - "AFTER_THIS": 현재 일정과 그 이후의 모든 미완료 일정 변경
+   */
+  changeType?: 'ALL' | 'AFTER_THIS';
+}
+
+/**
+ * @description Todo 삭제 시 범위를 지정하는 타입
+ * - "ONE_TODO": 현재 Todo 인스턴스만 삭제 (반복 시리즈에 영향 없음)
+ * - "FUTURE": 해당 Todo를 포함한 이후의 모든 반복 일정을 삭제
+ */
+export type DeleteTodoScope = 'ONE_TODO' | 'FUTURE';
+
+// ============================
+// API Functions
+// ============================
+
+const TODO_API_URL = '/api/todos';
+
+/**
+ * @description Todo 관련 API 요청을 처리하는 객체.
+ * 백엔드 `TodoController`의 명세와 1:1로 매칭됩니다.
+ */
 export const todoApi = {
   /**
-   * 새로운 Todo를 생성합니다.
-   * POST /api/todos
-   * @param payload - 새 Todo 생성을 위한 데이터 (제목, 메모, 마감일)
-   * @returns {Promise<TodoResponse>} - 생성된 Todo 데이터
+   * @summary **새로운 Todo 생성 API**
+   * @description 새로운 Todo 항목을 서버에 생성합니다. 반복 규칙을 포함할 수 있습니다.
+   * @param {CreateTodoRequest} payload - 생성할 Todo의 정보
+   * @returns {Promise<Todo>} 생성된 Todo 객체
+   * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */
-  createTodo: async (payload: CreateTodoRequest): Promise<TodoResponse> => {
-    const res = await api.post<ApiResponse<TodoResponse>>('/api/todos', payload);
-    if (!res.data.success) {
-      throw res.data;
+  createTodo: async (payload: CreateTodoRequest): Promise<Todo> => {
+    const response = await api.post<ApiResponse<Todo>>(TODO_API_URL, payload);
+
+    if (!response.data.success) {
+      throw response.data;
     }
-    return res.data.data;
+
+    return response.data.data;
   },
 
   /**
-   * ID로 Todo를 조회합니다.
-   * GET /api/todos/{todoId}
-   * @param todoId - 조회할 Todo의 ID
-   * @returns {Promise<TodoResponse>} - 요청된 Todo 데이터
+   * @summary **특정 ID의 Todo 조회 API**
+   * @description 주어진 ID에 해당하는 Todo 항목의 상세 정보를 조회합니다.
+   * @param {number} todoId - 조회할 Todo의 고유 ID
+   * @returns {Promise<Todo>} 조회된 Todo 객체
+   * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */
-  getTodoById: async (todoId: number): Promise<TodoResponse> => {
-    const res = await api.get<ApiResponse<TodoResponse>>(`/api/todos/${todoId}`);
-    if (!res.data.success) {
-      throw res.data;
+  getTodoById: async (todoId: number): Promise<Todo> => {
+    const response = await api.get<ApiResponse<Todo>>(`${TODO_API_URL}/${todoId}`);
+
+    if (!response.data.success) {
+      throw response.data;
     }
-    return res.data.data;
+
+    return response.data.data;
   },
 
   /**
-   * 인증된 사용자의 모든 Todo 목록을 조회합니다.
-   * GET /api/todos
-   * @returns {Promise<TodoResponse[]>} - Todo 데이터 목록
+   * @summary **사용자의 모든 Todo 목록 조회 API**
+   * @description 현재 인증된 사용자의 모든 Todo 목록을 조회합니다.
+   * @returns {Promise<Todo[]>} Todo 객체 배열
+   * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */
-  getTodoList: async (): Promise<TodoResponse[]> => {
-    const res = await api.get<ApiResponse<TodoResponse[]>>('/api/todos');
-    if (!res.data.success) {
-      throw res.data;
+  getTodoList: async (): Promise<Todo[]> => {
+    const response = await api.get<ApiResponse<Todo[]>>(TODO_API_URL);
+
+    if (!response.data.success) {
+      throw response.data;
     }
-    return res.data.data;
+
+    return response.data.data;
   },
 
   /**
-   * 기존 Todo를 업데이트합니다.
-   * PATCH /api/todos/{todoId}
-   * @param todoId - 업데이트할 Todo의 ID
-   * @param payload - Todo 업데이트를 위한 데이터 (제목, 메모, 완료 여부, 마감일). 부분 업데이트를 위해 필드는 선택 사항입니다.
-   * @returns {Promise<TodoResponse>} - 업데이트된 Todo 데이터
+   * @summary **Todo 정보 수정 API**
+   * @description 주어진 ID에 해당하는 Todo 항목의 정보를 수정합니다. 반복 규칙도 함께 수정할 수 있습니다.
+   * @param {number} todoId - 수정할 Todo의 고유 ID
+   * @param {UpdateTodoRequest} payload - 수정할 정보
+   * @returns {Promise<Todo>} 수정된 Todo 객체
+   * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */
-  updateTodo: async (todoId: number, payload: UpdateTodoRequest): Promise<TodoResponse> => {
-    const res = await api.patch<ApiResponse<TodoResponse>>(`/api/todos/${todoId}`, payload);
-    if (!res.data.success) {
-      throw res.data;
+  updateTodo: async (todoId: number, payload: UpdateTodoRequest): Promise<Todo> => {
+    const response = await api.patch<ApiResponse<Todo>>(`${TODO_API_URL}/${todoId}`, payload);
+
+    if (!response.data.success) {
+      throw response.data;
     }
-    return res.data.data;
+
+    return response.data.data;
   },
 
   /**
-   * ID로 Todo를 삭제합니다.
-   * DELETE /api/todos/{todoId}
-   * @param todoId - 삭제할 Todo의 ID
-   * @returns {Promise<void>} - 성공적으로 삭제되면 내용 없음
+   * @summary **Todo 삭제 API**
+   * @description 주어진 ID에 해당하는 Todo 항목을 삭제합니다. 반복의 경우 삭제 범위를 지정할 수 있습니다.
+   * @param {number} todoId - 삭제할 Todo의 고유 ID
+   * @param {DeleteTodoScope} deleteScope - 반복 일정 삭제 범위. "FUTURE"를 전달하면 이후 일정이 모두 삭제됩니다.
+   * @returns {Promise<void>} 성공 시 아무것도 반환하지 않음
+   * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */
-  deleteTodo: async (todoId: number): Promise<void> => {
-    const res = await api.delete<ApiResponse<void>>(`/api/todos/${todoId}`);
-    if (!res.data.success) {
-      throw res.data;
+  deleteTodo: async (todoId: number, deleteScope?: DeleteTodoScope): Promise<void> => {
+    const response = await api.delete<ApiResponse<void>>(`${TODO_API_URL}/${todoId}`, {
+      params: { deleteScope },
+    });
+
+    if (response.status === 200 || (response.data && response.data.success)) {
+      return;
+    }
+
+    if (!response.data.success) {
+      throw response.data;
     }
   },
 };

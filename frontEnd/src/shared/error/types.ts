@@ -23,6 +23,8 @@ export type ServerErrorCode =
   // ===== Todo =====
   | 'TODO_NOT_FOUND'
   | 'TODO_ACCESS_DENIED'
+  // ===== 반복 =====
+  | 'REPEAT_RULE_NOT_FOUND'
   // ===== 인증 / 인가 (추가) =====
   | 'SESSION_EXPIRED'
   // ===== 회원 =====

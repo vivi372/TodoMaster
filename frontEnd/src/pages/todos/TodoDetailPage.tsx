@@ -28,11 +28,13 @@ import { Separator } from '@/shared/ui/separator';
 
 import { Skeleton } from '@/shared/ui/skeleton';
 import { handleAxiosError } from '@/shared/error/handleAxiosError';
-import { useModal } from '@/shared/store/modalStore'; // useModal 추가
+import { useModalStore } from '@/shared/store/modalStore'; // useModalStore로 변경
 import { appToast } from '@/shared/utils/appToast'; // appToast 추가
 import { useUpdateTodo, useDeleteTodo } from '@/features/todos/hooks/useTodos'; // useUpdateTodo, useDeleteTodo 추가
 import { TodoFormModal } from '@/features/todos/components/TodoFormModal'; // TodoFormModal 추가
+import { RepeatDeleteModal } from '@/features/todos/components/RepeatDeleteModal'; // RepeatDeleteModal 임포트
 import { useTodo } from '@/features/todos/hooks/useTodo';
+import { formatRepeatRule, isRepeatExpired } from '@/shared/lib/utils'; // formatRepeatRule, isRepeatExpired 임포트
 
 // 우선순위 설정
 const priorityConfig = {
@@ -60,7 +62,9 @@ const priorityConfig = {
 export default function TodoDetailPage() {
   const navigate = useNavigate();
   const { todoId } = useParams<{ todoId: string }>();
-  const modal = useModal(); // useModal 훅 초기화
+  // modalStore에서 모달을 제어하는 함수들을 직접 가져옵니다.
+  // 이 방식은 Zustand 스토어의 상태를 구독하며, 리액티브하게 반응합니다.
+  const { showModal, showConfirm, closeModal } = useModalStore();
 
   // Todo 수정 모달의 열림/닫힘 상태를 관리
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -127,18 +131,61 @@ export default function TodoDetailPage() {
     setIsEditModalOpen(true);
   };
 
-  // Todo 삭제 핸들러
-  const handleDelete = async () => {
-    const confirmed = await modal.confirm({
-      title: 'Todo 삭제',
-      description: '정말로 이 Todo를 삭제하시겠습니까?',
-      confirmText: '삭제',
-      cancelText: '취소',
-      variant: 'warning',
-    });
+  // 반복 일정 수정 핸들러
+  // 상세 정보 페이지의 '반복 설정' 섹션에 있는 수정 버튼을 클릭했을 때 호출됩니다.
+  const handleOpenRepeatUpdateModal = () => {
+    // `RepeatUpdateModal`을 직접 호출하는 대신,
+    // 전체 Todo를 수정할 수 있는 메인 수정 모달(`TodoFormModal`)을 엽니다.
+    // `TodoFormModal`은 내부에 반복 일정 변경 시 수정 범위를 묻는
+    // `RepeatUpdateModal`을 호출하는 완전한 로직을 이미 갖추고 있습니다.
+    // 따라서 이 핸들러는 전체 수정 프로세스를 시작하는 `handleEdit`을 호출하는 것이
+    // 가장 올바르고 일관된 사용자 경험을 제공합니다.
+    handleEdit();
+  };
 
-    if (confirmed) {
-      deleteTodoMutation.mutate(numericTodoId);
+  // 반복 일정 삭제 모달 열기 핸들러
+  const handleOpenRepeatDeleteModal = async () => {
+    if (!todo) return;
+    // `showModal`을 호출하여 `RepeatDeleteModal` 커스텀 모달을 엽니다.
+    // 이제 `RepeatDeleteModal`은 `onClose`와 `onSuccess` 콜백을 통해 닫기 로직을 처리하므로,
+    // 이 콜백들 안에서 `closeModal` 함수를 호출하여 모달을 닫아줍니다.
+    showModal(RepeatDeleteModal, {
+      todoId: todo.todoId,
+      onSuccess: () => {
+        // `RepeatDeleteModal` 내부에서 삭제 성공 시 이 함수가 호출됩니다.
+        closeModal(); // 모달을 닫습니다.
+        // 삭제 성공 후 상세 페이지에서는 목록으로 이동하는 것이 자연스럽습니다.
+        navigate('/todos');
+      },
+      onClose: () => {
+        // `RepeatDeleteModal` 내부에서 사용자가 취소했을 때 이 함수가 호출됩니다.
+        closeModal(); // 모달을 닫습니다.
+      },
+    });
+  };
+
+  // Todo 삭제 핸들러 (반복 일정 처리 포함)
+  const handleDelete = async () => {
+    if (todo.repeatVO) {
+      // 반복 일정이 있는 경우, 반복 삭제 모달 열기
+      handleOpenRepeatDeleteModal();
+    } else {
+      // 반복 일정이 없는 경우, 일반 삭제 확인 모달 열기
+      // confirm 함수를 호출하여 사용자에게 삭제 여부를 확인받습니다.
+      // Promise를 반환하므로 await을 사용하여 결과를 기다립니다.
+      const confirmed = await showConfirm({
+        title: 'Todo 삭제',
+        description: '정말로 이 Todo를 삭제하시겠습니까?',
+        confirmText: '삭제',
+        cancelText: '취소',
+        variant: 'warning',
+      });
+
+      if (confirmed) {
+        // 수정한 useDeleteTodo 훅의 시그니처에 맞춰 id를 객체에 담아 전달합니다.
+        // scope가 없으면 단일 Todo 삭제로 처리됩니다.
+        deleteTodoMutation.mutate({ id: numericTodoId });
+      }
     }
   };
 
@@ -284,14 +331,37 @@ export default function TodoDetailPage() {
 
               <Separator />
 
-              {/* 반복 정보 (하드코딩된 UI) */}
+              {/* 반복 정보 */}
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100">
-                  <Repeat className="h-5 w-5 text-gray-400" />
+                <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+                    !!todo.repeatVO ? "bg-blue-100" : "bg-gray-100"
+                  )}>
+                  <Repeat className={cn("h-5 w-5", !!todo.repeatVO ? "text-blue-500" : "text-gray-400")} />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground">반복 설정</p>
-                  <p className="text-sm text-muted-foreground italic mt-1">반복 설정이 없습니다</p>
+                  {!!todo.repeatVO ? (
+                    <div className="mt-1 space-y-1">
+                      <p className="text-base font-semibold text-foreground">
+                        {formatRepeatRule(todo.repeatVO)}
+                      </p>
+                      {todo.repeatVO.endDate && (
+                        <p className="text-sm text-muted-foreground">
+                          종료일: {formatDate(todo.repeatVO.endDate)}
+                        </p>
+                      )}
+                      {isRepeatExpired(todo.repeatVO) && (
+                        <div className="mt-2 text-sm text-slate-500 bg-slate-50 p-2 rounded-md">
+                          이 일정은 반복 기간이 종료되어 더 이상 반복되지 않습니다.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic mt-1">
+                      반복 설정이 없습니다
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

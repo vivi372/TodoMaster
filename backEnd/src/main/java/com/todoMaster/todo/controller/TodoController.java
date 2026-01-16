@@ -85,15 +85,19 @@ public class TodoController {
 
     /**
      * 지정된 ID의 Todo 항목을 삭제합니다.
-     * @param todoId 삭제할 Todo의 고유 ID
+     * 반복 Todo의 경우, 'deleteScope' 파라미터를 통해 삭제 범위를 지정할 수 있습니다.
+     *
+     * @param todoId      삭제할 Todo의 고유 ID
+     * @param deleteScope 삭제 범위 ("FUTURE": 이후 일정 모두 삭제, null 또는 다른 값: 단일 항목만 삭제)
      * @return 작업 성공 메시지를 담은 ResponseEntity (데이터는 없음)
      */
     @DeleteMapping("/{todoId}")
     public ResponseEntity<ApiResponse<Void>> deleteTodo(
-            @PathVariable Long todoId
+            @PathVariable Long todoId,
+            @RequestParam(required = false) String deleteScope
     ) {
         Long userId = todoService.getAuthenticatedUserId();
-        todoService.deleteTodo(todoId, userId);
+        todoService.deleteTodo(todoId, userId, deleteScope);
         return ResponseEntity.ok(ApiResponse.success("Todo가 성공적으로 삭제되었습니다."));
     }
 }

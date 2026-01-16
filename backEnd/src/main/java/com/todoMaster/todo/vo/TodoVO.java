@@ -1,5 +1,6 @@
 package com.todoMaster.todo.vo;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.todoMaster.repeat.vo.RepeatVO;
 import lombok.ToString;
 
 /**
@@ -63,16 +65,22 @@ public class TodoVO {
     private String isCompleted;
 
     /**
-     * Todo 항목의 마감 기한.
+     * Todo 항목의 마감 기한. 시간 정보는 포함하지 않음.
      * DB의 DUE_DATE에 해당합니다.
      */
-    private Date dueDate;
+    private LocalDate dueDate;
     
     /**
      * 반복 규칙 ID.
      * DB의 REPEAT_RULE_ID에 해당합니다.
      */
     private Long repeatRuleId;
+
+    /**
+     * TODO와 조인된 반복 규칙 정보를 담는 객체.
+     * MyBatis의 resultMap을 통해 채워집니다.
+     */
+    private RepeatVO repeatVO;
 
     /**
      * 완료 처리 일시.

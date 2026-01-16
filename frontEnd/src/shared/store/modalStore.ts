@@ -1,4 +1,5 @@
 ﻿import { create } from 'zustand';
+import type { ComponentType } from 'react';
 import type { actionCode } from '../hooks/useMessageActions';
 
 // ConfirmModalProps에서 버튼/핸들러 관련 속성들을 제외한 순수 데이터 타입
@@ -42,14 +43,40 @@ interface ModalStore {
 
   /** 공통 닫기/취소 처리 */
   handleClose: (confirmed: boolean) => void;
+
+  // ================================================================
+  // D. Custom Modal Component Support
+  // ================================================================
+
+  /**
+   * 사용자 정의 컴포넌트를 모달로 띄우기 위한 상태
+   * - `modalComponent`: 렌더링할 React 컴포넌트
+   * - `props`: 해당 컴포넌트에 전달될 속성
+   */
+  modalComponent: ComponentType<any> | null;
+  props: Record<string, any>;
+
+  /**
+   * 사용자 정의 컴포넌트를 모달로 띄웁니다.
+   * @param component - 모달로 렌더링할 React 컴포넌트
+   * @param props - 컴포넌트에 전달할 props
+   */
+  showModal: <T extends Record<string, any>>(component: ComponentType<T>, props: T) => void;
+
+  /**
+   * 현재 열려 있는 사용자 정의 모달을 닫습니다.
+   */
+  closeModal: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set, get) => ({
   modalData: null,
   resolve: null,
+  modalComponent: null,
+  props: {},
 
   // ================================================================
-  // A. Core Handler
+  // A. Core Handler (for Alert/Confirm)
   // ================================================================
 
   handleClose: (confirmed) => {
@@ -68,7 +95,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     return new Promise<void>((resolve) => {
       set({
         modalData: { ...props, type: 'alert' },
-        resolve: resolve as AlertResolveFunction, // Promise<void>를 resolve에 저장
+        resolve: resolve as AlertResolveFunction,
       });
     });
   },
@@ -81,17 +108,45 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     return new Promise<boolean>((resolve) => {
       set({
         modalData: { ...props, type: 'confirm' },
-        resolve: resolve as ModalResolveFunction, // Promise<boolean>을 resolve에 저장
+        resolve: resolve as ModalResolveFunction,
       });
     });
   },
+
+  // ================================================================
+  // D. Public API (Custom Modal)
+  // ================================================================
+
+  /**
+   * 사용자 정의 컴포넌트를 모달 상태로 설정합니다.
+   *
+   * @template T - 컴포넌트의 props 타입
+   * @param {ComponentType<T>} component - 모달로 표시할 컴포넌트
+   * @param {T} props - 컴포넌트에 전달할 props
+   */
+  showModal: (component, props) => {
+    set({ modalComponent: component, props: props });
+  },
+
+  /**
+   * 현재 표시된 사용자 정의 모달을 상태에서 제거하여 닫습니다.
+   */
+  closeModal: () => {
+    set({ modalComponent: null, props: {} });
+  },
 }));
 
-// Custom Hook도 이제 showConfirm과 showAlert 두 함수를 모두 반환하도록 변경할 수 있습니다.
+/**
+ * 전역 모달 상태를 사용하기 위한 커스텀 훅.
+ * `alert`, `confirm`, `showModal`, `closeModal` 함수를 제공하여
+ * 다양한 종류의 모달을 쉽게 제어할 수 있습니다.
+ */
 export const useModal = () => {
   const store = useModalStore.getState();
   return {
     alert: store.showAlert,
     confirm: store.showConfirm,
+    showModal: store.showModal,
+    closeModal: store.closeModal,
   };
 };

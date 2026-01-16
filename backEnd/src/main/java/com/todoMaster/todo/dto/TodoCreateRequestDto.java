@@ -1,6 +1,7 @@
 package com.todoMaster.todo.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.todoMaster.repeat.dto.RepeatRuleCreateRequest;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 /**
@@ -41,7 +43,7 @@ public class TodoCreateRequestDto {
     // @FutureOrPresent: 날짜와 시간이 현재 또는 미래인지 확인합니다.
     @FutureOrPresent(message = "마감 기한은 현재 또는 미래의 날짜여야 합니다.")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private Date dueDate;
+    private LocalDate dueDate;
 
     /**
      * Todo 항목의 우선순위입니다. (0: 낮음, 1: 보통, 2: 높음)
@@ -51,4 +53,10 @@ public class TodoCreateRequestDto {
     // @Max: 필드 값이 지정된 최대값 이하인지 확인합니다.
     @Max(value = 2, message = "우선순위는 2보다 클 수 없습니다.")
     private Integer priority;
+
+    /**
+     * Todo 항목의 반복 규칙입니다.
+     * 이 필드가 존재하면 반복 Todo로 생성됩니다.
+     */
+    private RepeatRuleCreateRequest repeatRule;
 }
