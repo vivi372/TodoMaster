@@ -121,81 +121,80 @@ const calculateMinEndDate = (
   }
 };
 
-const formSchema =
-  z
-    .object({
-      title: z
-        .string()
-        .nonempty('제목을 입력해주세요.')
-        .min(2, '제목은 최소 2자 이상이어야 합니다.')
-        .max(100, '제목은 100자를 초과할 수 없습니다.'),
-      memo: z.string().max(500, '메모는 500자를 초과할 수 없습니다.').optional(),
-      category: z.string().optional(),
-      priority: z.enum(['high', 'medium', 'low']).default('medium').nonoptional(),
-      dueDate: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다 (YYYY-MM-DD).')
-        .optional()
-        .nullable(),
-      isRepeating: z.boolean().default(false).nonoptional(),
-      repeatRule: z
-        .object({
-          type: z.enum(['DAILY', 'WEEKLY', 'MONTHLY'], {
-            message: '반복 타입을 선택해주세요.',
-          }),
-          intervalValue: z
-            .number()
-            .int()
-            .min(1, '반복 간격은 1 이상이어야 합니다.')
-            .default(1)
-            .nonoptional(),
-          weekDays: z.array(z.number()).optional(),
-          endDate: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다 (YYYY-MM-DD).')
-            .optional()
-            .nullable(),
-        })
-        .optional(),
-    })
-    .refine(
-      (data) => {
-        // 반복 설정을 사용하고, 마감일과 종료일이 모두 있는 경우에만 유효성 검사 실행
-        if (data.isRepeating && data.dueDate && data.repeatRule?.endDate) {
-          // 반복 종료일이 마감일보다 이전 날짜이면 유효성 검사 실패
-          return parseISO(data.repeatRule.endDate) >= parseISO(data.dueDate);
+const formSchema = z
+  .object({
+    title: z
+      .string()
+      .nonempty('제목을 입력해주세요.')
+      .min(2, '제목은 최소 2자 이상이어야 합니다.')
+      .max(100, '제목은 100자를 초과할 수 없습니다.'),
+    memo: z.string().max(500, '메모는 500자를 초과할 수 없습니다.').optional(),
+    category: z.string().optional(),
+    priority: z.enum(['high', 'medium', 'low']).default('medium').nonoptional(),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다 (YYYY-MM-DD).')
+      .optional()
+      .nullable(),
+    isRepeating: z.boolean().default(false).nonoptional(),
+    repeatRule: z
+      .object({
+        type: z.enum(['DAILY', 'WEEKLY', 'MONTHLY'], {
+          message: '반복 타입을 선택해주세요.',
+        }),
+        intervalValue: z
+          .number()
+          .int()
+          .min(1, '반복 간격은 1 이상이어야 합니다.')
+          .default(1)
+          .nonoptional(),
+        weekDays: z.array(z.number()).optional(),
+        endDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다 (YYYY-MM-DD).')
+          .optional()
+          .nullable(),
+      })
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // 반복 설정을 사용하고, 마감일과 종료일이 모두 있는 경우에만 유효성 검사 실행
+      if (data.isRepeating && data.dueDate && data.repeatRule?.endDate) {
+        // 반복 종료일이 마감일보다 이전 날짜이면 유효성 검사 실패
+        return parseISO(data.repeatRule.endDate) >= parseISO(data.dueDate);
+      }
+      // 그 외의 경우는 항상 통과
+      return true;
+    },
+    {
+      // 유효성 검사 실패 시 표시될 메시지
+      message: '반복 종료일은 마감일보다 이전 날짜일 수 없습니다.',
+      // 이 오류 메시지를 'repeatRule.endDate' 필드와 연결
+      path: ['repeatRule', 'endDate'],
+    },
+  )
+  .refine(
+    (data) => {
+      // 반복 종료일이 최소 반복 생성일보다 빠른지 검증
+      if (data.isRepeating && data.dueDate && data.repeatRule?.endDate && data.repeatRule) {
+        const minEndDate = calculateMinEndDate(
+          data.dueDate,
+          data.repeatRule.type,
+          data.repeatRule.intervalValue,
+          data.repeatRule.weekDays,
+        );
+        if (minEndDate) {
+          return parseISO(data.repeatRule.endDate) >= minEndDate;
         }
-        // 그 외의 경우는 항상 통과
-        return true;
-      },
-      {
-        // 유효성 검사 실패 시 표시될 메시지
-        message: '반복 종료일은 마감일보다 이전 날짜일 수 없습니다.',
-        // 이 오류 메시지를 'repeatRule.endDate' 필드와 연결
-        path: ['repeatRule', 'endDate'],
-      },
-    )
-    .refine(
-      (data) => {
-        // 반복 종료일이 최소 반복 생성일보다 빠른지 검증
-        if (data.isRepeating && data.dueDate && data.repeatRule?.endDate && data.repeatRule) {
-          const minEndDate = calculateMinEndDate(
-            data.dueDate,
-            data.repeatRule.type,
-            data.repeatRule.intervalValue,
-            data.repeatRule.weekDays,
-          );
-          if (minEndDate) {
-            return parseISO(data.repeatRule.endDate) >= minEndDate;
-          }
-        }
-        return true;
-      },
-      {
-        message: '반복 종료일은 최소 1회 이상 반복이 생성되는 날짜여야 합니다.',
-        path: ['repeatRule', 'endDate'],
-      },
-    );
+      }
+      return true;
+    },
+    {
+      message: '반복 종료일은 최소 1회 이상 반복이 생성되는 날짜여야 합니다.',
+      path: ['repeatRule', 'endDate'],
+    },
+  );
 
 type TodoFormValues = z.infer<typeof formSchema>;
 
@@ -332,7 +331,8 @@ export function TodoFormModal({
     control,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
+    reset,
   } = form;
 
   const [isLoadingForm, setIsLoadingForm] = useState(false);
@@ -391,15 +391,7 @@ export function TodoFormModal({
     } else {
       setMinEndDate(null);
     }
-  }, [
-    isRepeating,
-    dueDate,
-    repeatType,
-    repeatInterval,
-    repeatWeekDays,
-    endDate,
-    setValue,
-  ]);
+  }, [isRepeating, dueDate, repeatType, repeatInterval, repeatWeekDays, endDate, setValue]);
 
   const getRepeatSummary = useCallback(() => {
     if (!isRepeating || !repeatRule) return '';
@@ -445,34 +437,20 @@ export function TodoFormModal({
   useEffect(() => {
     if (open) {
       setIsLoadingForm(true);
+      // [로직 개선] `form.reset`을 사용하여 수정 모드의 폼 초기값을 설정합니다.
+      // 이 방식은 react-hook-form의 isDirty 상태를 정확하게 관리하기 위함입니다.
+      // 개별 필드에 `setValue`와 `shouldDirty: true`를 사용하면 사용자가 수정하지 않아도 폼이 'dirty' 상태가 되는 문제를 방지합니다.
       const timer = setTimeout(() => {
         if (mode === 'edit' && todoToEdit) {
-          // --- 수정 모드 ---
           const priorityString =
             (priorityMap[todoToEdit.priority] as 'high' | 'medium' | 'low') || 'medium';
-          setValue('title', todoToEdit.title || '', { shouldValidate: true, shouldDirty: true });
-          setValue('memo', todoToEdit.memo || '', { shouldValidate: true, shouldDirty: true });
-          setValue('priority', priorityString, { shouldValidate: true, shouldDirty: true });
-          setValue('dueDate', todoToEdit.dueDate, {
-            shouldValidate: true,
-            shouldDirty: true,
-          });
-          setValue('category', '', { shouldValidate: true, shouldDirty: true });
 
-          // --- 반복 규칙 설정 ---
           const hasRepeatRule = !!todoToEdit.repeatVO;
-          setValue('isRepeating', hasRepeatRule);
+          let repeatRuleData;
 
           if (hasRepeatRule) {
             const { type, intervalValue, weekDays, endDate } = todoToEdit.repeatVO!;
-            setValue('repeatRule.type', type);
-            setValue('repeatRule.intervalValue', intervalValue);
-            if (endDate) {
-              setValue('repeatRule.endDate', format(parseISO(endDate), 'yyyy-MM-dd'));
-            } else {
-              setValue('repeatRule.endDate', null);
-            }
-
+            let weekDaysAsNumbers: number[] = [];
             if (type === 'WEEKLY' && weekDays) {
               const dayStringToNum: { [key: string]: number } = {
                 SUN: 0,
@@ -483,17 +461,31 @@ export function TodoFormModal({
                 FRI: 5,
                 SAT: 6,
               };
-              const weekDaysAsNumbers = weekDays
+              weekDaysAsNumbers = weekDays
                 .split(',')
                 .map((day) => dayStringToNum[day.trim() as keyof typeof dayStringToNum]);
-              setValue('repeatRule.weekDays', weekDaysAsNumbers);
-            } else {
-              setValue('repeatRule.weekDays', []);
             }
+            repeatRuleData = {
+              type,
+              intervalValue,
+              weekDays: weekDaysAsNumbers,
+              endDate: endDate ? format(parseISO(endDate), 'yyyy-MM-dd') : null,
+            };
+          } else {
+            repeatRuleData = defaultFormValues.repeatRule;
           }
+
+          reset({
+            title: todoToEdit.title || '',
+            memo: todoToEdit.memo || '',
+            priority: priorityString,
+            dueDate: todoToEdit.dueDate,
+            category: '', // Assuming category is not part of Todo entity yet
+            isRepeating: hasRepeatRule,
+            repeatRule: repeatRuleData,
+          });
         } else {
-          // --- 생성 모드 또는 초기화 ---
-          form.reset(defaultFormValues);
+          reset(defaultFormValues);
         }
         setIsLoadingForm(false);
       }, 50);
@@ -501,7 +493,7 @@ export function TodoFormModal({
     } else {
       setIsLoadingForm(false);
     }
-  }, [open, mode, todoToEdit, setValue, form]);
+  }, [open, mode, todoToEdit, reset]);
 
   const onFormError = (error: FieldErrors<TodoFormValues>) => {
     // `repeatRule.endDate` 에러 메시지를 우선적으로 찾습니다.
@@ -554,7 +546,12 @@ export function TodoFormModal({
       };
       createTodoMutation.mutate(createPayload);
     } else if (mode === 'edit' && todoToEdit) {
-      // --- 수정 로직 시작 ---
+      if (!isDirty) {
+        appToast.info({ message: '변경 사항이 없습니다.' });
+        onOpenChange(false);
+        return;
+      }
+
       const updatePayload: UpdateTodoRequest = {
         title: data.title,
         memo: data.memo,
@@ -563,29 +560,38 @@ export function TodoFormModal({
         repeatRule: repeatRulePayload,
       };
 
-      // 2. 기존 반복 규칙(oldRule)과 새로 생성된 규칙(newRule)을 비교
-      const oldRule = todoToEdit.repeatVO;
-      const rulesAreEqual = areRepeatRulesEqual(oldRule, repeatRulePayload);
-
-      // 3. 규칙이 변경되었을 경우에만 모달을 띄움
-      if (!rulesAreEqual && oldRule) {
+      // [로직 개선] 반복 투두는 어떤 필드든 변경되면(isDirty) 항상 수정 범위 선택 모달을 노출.
+      // 사용자가 자신도 모르게 전체 시리즈를 변경하는 실수를 방지하고, 데이터 정합성을 확보하기 위함.
+      if (todoToEdit.repeatVO) {
         try {
-          // 4. `showModal`을 Promise로 감싸서 사용자의 선택을 비동기적으로 기다립니다.
-          const changeType = await new Promise<'ALL' | 'AFTER_THIS' | null>((resolve) => {
-            modal.showModal(RepeatUpdateModal, {
-              onResolve: resolve,
-              isDueDateCleared: !data.dueDate, // 마감일이 삭제되었는지 여부를 전달
-            });
-          });
+          const rulesAreEqual = areRepeatRulesEqual(todoToEdit.repeatVO, repeatRulePayload);
+          const dueDateChanged = todoToEdit.dueDate !== data.dueDate;
 
-          // 5. 사용자가 '취소'를 선택하면(changeType이 null), API 호출을 중단.
+          const changeType = await new Promise<'ALL' | 'AFTER_THIS' | 'ONLY_THIS' | null>(
+            (resolve) => {
+              modal.showModal(RepeatUpdateModal, {
+                onResolve: resolve,
+                isDueDateCleared: !data.dueDate,
+                isDueDateChanged: dueDateChanged,
+                isRuleChanged: !rulesAreEqual,
+              });
+            },
+          );
+
           if (changeType === null) {
             appToast.info({ message: '수정이 취소되었습니다.' });
             return;
           }
 
-          // 6. 사용자가 '모두' 또는 '이후'를 선택하면, payload에 changeType 추가
-          updatePayload.changeType = changeType;
+          // [로직 변경] 'ONLY_THIS' 선택 시, 이를 새로운 반복 시리즈의 시작으로 간주합니다.
+          // API 요청 시 백엔드가 모르는 changeType만 제거하고, 사용자가 수정한 repeatRule 정보는 그대로 보내
+          // 백엔드가 새 시리즈를 생성하도록 유도합니다.
+          if (changeType === 'ONLY_THIS') {
+            updatePayload.changeType = undefined;
+          } else {
+            // 'ALL' 또는 'AFTER_THIS'는 API가 받는 그대로 전달.
+            updatePayload.changeType = changeType;
+          }
         } catch (error) {
           console.error('Modal promise failed:', error);
           appToast.error({ message: '오류가 발생하여 수정을 완료할 수 없습니다.' });
@@ -593,7 +599,7 @@ export function TodoFormModal({
         }
       }
 
-      // 7. 최종적으로 구성된 payload로 업데이트 API 호출
+      // 최종적으로 구성된 payload로 업데이트 API 호출
       updateTodoMutation.mutate({ id: todoToEdit.todoId, payload: updatePayload });
     }
   };
