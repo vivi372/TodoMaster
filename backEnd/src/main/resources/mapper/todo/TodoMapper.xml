@@ -252,4 +252,27 @@
             TODO_ID = #{todoId}
     </update>
 
+    <!-- '이후 일정 수정' 시, 후속 Todo들의 날짜, 규칙 ID 및 주요 컨텐츠(제목, 메모, 우선순위)를 함께 업데이트합니다. -->
+    <update id="updateShiftedRepeatTodo" parameterType="map">
+        UPDATE TODO
+        SET
+            DUE_DATE = #{dueDate},
+            REPEAT_RULE_ID = #{repeatRuleId},
+            TITLE = #{title},
+            MEMO = #{memo},
+            PRIORITY = #{priority},
+            UPDATED_AT = SYSDATE
+        WHERE
+            TODO_ID = #{todoId}
+    </update>
+
+    <!-- ID 목록을 기반으로 여러개의 Todo 항목을 한번에 삭제합니다. -->
+    <delete id="deleteTodos" parameterType="java.util.List">
+        DELETE FROM TODO
+        WHERE TODO_ID IN
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
 </mapper>

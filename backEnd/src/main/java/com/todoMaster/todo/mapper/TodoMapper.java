@@ -24,4 +24,12 @@ public interface TodoMapper {
     List<TodoVO> findTodosByRepeatRuleIdOnOrAfterDate(@Param("repeatRuleId") Long repeatRuleId, @Param("date") LocalDate date);
     void updateTodoDueDateAndRepeatRule(@Param("todoId") Long todoId, @Param("dueDate") LocalDate dueDate, @Param("repeatRuleId") Long repeatRuleId);
     void setDueDateToNull(long todoId);
+
+    void updateShiftedRepeatTodo(@Param("todoId") Long todoId,
+                                 @Param("dueDate") LocalDate dueDate,
+                                 @Param("repeatRuleId") Long repeatRuleId,
+                                 @Param("title") String title,
+                                 @Param("memo") String memo,
+                                 @Param("priority") Integer priority);
+    void deleteTodos(List<Long> todoIds);
 }

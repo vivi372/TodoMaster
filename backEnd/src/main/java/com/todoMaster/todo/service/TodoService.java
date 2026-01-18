@@ -125,6 +125,7 @@ public class TodoService {
     public TodoResponseDto updateTodo(Long todoId, TodoUpdateRequestDto requestDto, Long userId) {
         // 1. Todo 조회 및 소유권 확인
         TodoVO todo = getTodoAndCheckOwnership(todoId, userId);
+        final LocalDate originalDueDate = todo.getDueDate();
 
         RepeatRuleCreateRequest repeatRuleDto = requestDto.getRepeatRule();
 
@@ -187,11 +188,53 @@ public class TodoService {
             TodoVO updatedTodo = todoMapper.findTodoById(todoId);
             return TodoResponseDto.from(updatedTodo);
         }
+
+        // [문제 해결] 마감일 null과 AFTER_THIS를 포함한 반복 규칙 변경 요청 시
+        // 기준 투두의 repeatRuleId가 올바르게 갱신되지 않는 문제 수정.
+        // repeatRuleDto가 존재하는 경우를 먼저 처리하여, 새로운 반복 규칙 생성을 우선시한다.
+        // 즉, 마감일이 null이더라도 repeatRuleDto가 있으면 새로운 반복 규칙으로 이관되어야 한다.
+        else if (repeatRuleDto != null) {
+            // 마감일 포함 Todo의 변경 내용을 먼저 적용하고 DB에 반영한다.
+            // 이렇게 함으로써 repeatService.updateRepeatRule이 호출될 때
+            // todo 객체가 최신 상태(예: null DueDate)를 유지하게 한다.
+            applyTodoContentChanges(todo, requestDto);
+            todoMapper.updateTodo(todo);
+
+            RepeatVO newRepeatVO = RepeatVO.builder()
+                .type(repeatRuleDto.getType())
+                .intervalValue(repeatRuleDto.getIntervalValue())
+                .weekDays(repeatRuleDto.getWeekDays())
+                .endDate(repeatRuleDto.getEndDate())
+                .build();
+
+            if (todo.getRepeatRuleId() != null) {
+                // 기존에 반복되던 Todo의 규칙을 변경
+                log.info("기존 반복 Todo 규칙 변경: todoId={}, changeType={}", todoId, requestDto.getChangeType());
+                repeatService.updateRepeatRule(todo.getRepeatRuleId(), requestDto.getChangeType(), newRepeatVO, todoId, originalDueDate);
+
+                // updateRepeatRule 호출 후, DB에서 최신 상태의 Todo를 다시 조회하여 현재 'todo' 객체를 갱신합니다.
+                // 이렇게 하지 않으면, 현재 스코프의 'todo' 객체는 예전 repeatRuleId를 가지고 있어,
+                // 마지막 updateTodo 호출 시 RuleId를 예전 값으로 되돌리는 문제가 발생할 수 있습니다.
+                todo = getTodoAndCheckOwnership(todoId, userId);
+            } else {
+                // 일반 Todo를 반복 Todo로 변경
+                log.info("일반 Todo를 반복 Todo로 변경: todoId={}", todoId);
+                // 내용 변경을 먼저 저장한 후, 이를 기반으로 반복 규칙 생성 (이미 위에서 저장됨)
+                repeatService.createTodoWithRepeatRule(newRepeatVO, todo);
+                
+                // createTodoWithRepeatRule에서 모든 작업을 처리했으므로, 최신 정보를 조회하여 반환
+                TodoVO updatedTodo = todoMapper.findTodoById(todoId);
+                return TodoResponseDto.from(updatedTodo);
+            }
+            // 모든 변경이 적용된 최신 정보를 조회하여 반환
+            TodoVO updatedTodo = todoMapper.findTodoById(todoId);
+            return TodoResponseDto.from(updatedTodo);
+        }
         
         // ==========================================================================================
-        // [수정된 로직] 마감일 삭제 및 '이후 모든 일정' 선택 시, 후속 Todo들을 삭제하고 반복을 중단하는 로직
+        // 마감일 삭제 및 '이후 모든 일정' 선택 시, 후속 Todo들을 삭제하고 반복을 중단하는 로직
         // ==========================================================================================
-        if (requestDto.getDueDate() == null && "AFTER_THIS".equalsIgnoreCase(requestDto.getChangeType()) && todo.getRepeatRuleId() != null) {
+        else if (requestDto.getDueDate() == null && "AFTER_THIS".equalsIgnoreCase(requestDto.getChangeType()) && todo.getRepeatRuleId() != null) {
             /*
              * 비즈니스 규칙 상세:
              * 사용자가 반복되는 일정의 특정 항목에 대해 마감일을 '없음'으로 설정하고 '이후 모든 일정에 적용' 옵션을 선택했습니다.
@@ -222,39 +265,6 @@ public class TodoService {
             // 5. 모든 변경이 적용된 최신 Todo 정보를 조회하여 반환
             TodoVO updatedTodo = todoMapper.findTodoById(todoId);
             return TodoResponseDto.from(updatedTodo);
-        }
-
-        // 2. 반복 규칙 변경 처리 (내용 변경보다 우선 처리)
-        if (repeatRuleDto != null) {
-            RepeatVO newRepeatVO = RepeatVO.builder()
-                .type(repeatRuleDto.getType())
-                .intervalValue(repeatRuleDto.getIntervalValue())
-                .weekDays(repeatRuleDto.getWeekDays())
-                .endDate(repeatRuleDto.getEndDate())
-                .build();
-
-            if (todo.getRepeatRuleId() != null) {
-                // 2-1. 기존에 반복되던 Todo의 규칙을 변경
-                log.info("기존 반복 Todo 규칙 변경: todoId={}, changeType={}", todoId, requestDto.getChangeType());
-                repeatService.updateRepeatRule(todo.getRepeatRuleId(), requestDto.getChangeType(), newRepeatVO, todoId);
-
-                // [Scenario 2 대응: 기준 투두의 새로운 RepeatRuleId 업데이트 보장]
-                // updateRepeatRule 호출 후, DB에서 최신 상태의 Todo를 다시 조회하여 현재 'todo' 객체를 갱신합니다.
-                // 이렇게 하지 않으면, 현재 스코프의 'todo' 객체는 예전 repeatRuleId를 가지고 있어,
-                // 마지막 updateTodo 호출 시 RuleId를 예전 값으로 되돌리는 문제가 발생할 수 있습니다.
-                todo = getTodoAndCheckOwnership(todoId, userId);
-            } else {
-                // 2-2. 일반 Todo를 반복 Todo로 변경
-                log.info("일반 Todo를 반복 Todo로 변경: todoId={}", todoId);
-                // 내용 변경을 먼저 저장한 후, 이를 기반으로 반복 규칙 생성
-                applyTodoContentChanges(todo, requestDto);
-                todoMapper.updateTodo(todo);
-                repeatService.createTodoWithRepeatRule(newRepeatVO, todo);
-                
-                // createTodoWithRepeatRule에서 모든 작업을 처리했으므로, 최신 정보를 조회하여 반환
-                TodoVO updatedTodo = todoMapper.findTodoById(todoId);
-                return TodoResponseDto.from(updatedTodo);
-            }
         }
 
         // 3. Todo 내용 변경 적용 (반복 규칙 변경과 별개로 항상 적용)
