@@ -295,18 +295,14 @@ public class RepeatService {
         }
 
         // 새 반복 규칙에 따라 생성될 후속 Todo들의 DueDate 목록을 생성합니다.
-        // 이 목록은 anchorTodo '이후'의 날짜들만 포함합니다.
         List<LocalDate> newSuccessorDueDates = generateRepeatDates(newRule, anchorTodo);
-        // todosToShift는 원본 날짜 기준으로 정렬되어 있다고 가정합니다.
         Iterator<TodoVO> todoIterator = todosToShift.iterator();
 
         // 1. 첫 번째 Todo(수정의 기준이 된 anchorTodo)를 처리합니다.
-        // 이 Todo의 컨텐츠(제목, 마감일 등)는 이미 TodoService에서 변경되었으므로,
-        // 여기서는 새로운 반복 규칙 ID(newRule.getRepeatRuleId())만 할당해줍니다.
         TodoVO anchorTodoInList = todoIterator.next();
         todoMapper.updateShiftedRepeatTodo(
                 anchorTodoInList.getTodoId(),
-                anchorTodo.getDueDate(), // TodoService에서 변경된 최신 마감일
+                anchorTodo.getDueDate(),
                 newRule.getRepeatRuleId(),
                 anchorTodo.getTitle(),
                 anchorTodo.getMemo(),
@@ -319,23 +315,18 @@ public class RepeatService {
         while (todoIterator.hasNext()) {
             TodoVO currentSuccessorTodo = todoIterator.next();
 
-            // 업데이트할 새 날짜가 남아있으면, 후속 Todo의 컨텐츠를 업데이트합니다.
             if (successorDateIndex < newSuccessorDueDates.size()) {
                 LocalDate newDueDate = newSuccessorDueDates.get(successorDateIndex);
-
-                // 핵심: 날짜와 규칙 ID 뿐만 아니라, 제목/메모/우선순위 등 anchorTodo의 최신 컨텐츠를 함께 전파합니다.
                 todoMapper.updateShiftedRepeatTodo(
                         currentSuccessorTodo.getTodoId(),
                         newDueDate,
                         newRule.getRepeatRuleId(),
-                        anchorTodo.getTitle(), // anchorTodo의 제목으로 통일
-                        anchorTodo.getMemo(),   // anchorTodo의 메모로 통일
-                        anchorTodo.getPriority() // anchorTodo의 우선순위로 통일
+                        anchorTodo.getTitle(),
+                        anchorTodo.getMemo(),
+                        anchorTodo.getPriority()
                 );
                 successorDateIndex++;
-            }
-            // 업데이트할 날짜가 더 없는데 기존 Todo가 남아있다면, 불필요한 Todo이므로 삭제 목록에 추가합니다.
-            else {
+            } else {
                 idsToDelete.add(currentSuccessorTodo.getTodoId());
             }
         }
@@ -344,6 +335,20 @@ public class RepeatService {
         if (!idsToDelete.isEmpty()) {
             todoMapper.deleteTodos(idsToDelete);
             log.info("{}개의 불필요한 반복 Todo를 삭제했습니다.", idsToDelete.size());
+        }
+
+        // 4. 새로운 규칙에 따라 추가로 생성해야 할 Todo가 있는지 확인하고 생성합니다.
+        if (successorDateIndex < newSuccessorDueDates.size()) {
+            List<TodoVO> todosToCreate = new ArrayList<>();
+            for (int i = successorDateIndex; i < newSuccessorDueDates.size(); i++) {
+                LocalDate newDueDate = newSuccessorDueDates.get(i);
+                // createNewTodoFromBase 메서드를 사용하여 anchorTodo의 최신 정보를 기반으로 새 Todo를 생성
+                todosToCreate.add(createNewTodoFromBase(anchorTodo, newDueDate, newRule.getRepeatRuleId()));
+            }
+            if (!todosToCreate.isEmpty()) {
+                todoMapper.insertTodos(todosToCreate);
+                log.info("{}개의 새로운 반복 Todo를 추가로 생성했습니다.", todosToCreate.size());
+            }
         }
     }
 
