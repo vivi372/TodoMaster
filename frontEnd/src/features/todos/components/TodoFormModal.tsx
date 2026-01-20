@@ -337,6 +337,9 @@ export function TodoFormModal({
 
   const [isLoadingForm, setIsLoadingForm] = useState(false);
   const [minEndDate, setMinEndDate] = useState<Date | null>(null);
+  // 1. [UX 개선] 캘린더 Popover의 열림/닫힘 상태를 직접 제어하기 위한 상태 변수를 추가합니다.
+  const [isDueDatePopoverOpen, setDueDatePopoverOpen] = useState(false);
+  const [isEndDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
   const modal = useModal(); // 모달 훅 사용
 
   const createTodoMutation = useCreateTodo({
@@ -764,7 +767,8 @@ export function TodoFormModal({
                   control={control}
                   name="dueDate"
                   render={({ field }) => (
-                    <Popover>
+                    // 2. [UX 개선] Popover를 제어 컴포넌트로 전환합니다.
+                    <Popover open={isDueDatePopoverOpen} onOpenChange={setDueDatePopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -783,9 +787,11 @@ export function TodoFormModal({
                         <Calendar
                           mode="single"
                           selected={field.value ? parseISO(field.value) : undefined}
-                          onSelect={(date) =>
-                            field.onChange(date ? format(date, 'yyyy-MM-dd') : null)
-                          }
+                          onSelect={(date) => {
+                            // 3. [UX 개선] 날짜를 선택하면 폼의 값을 변경하고, Popover를 닫습니다.
+                            field.onChange(date ? format(date, 'yyyy-MM-dd') : null);
+                            setDueDatePopoverOpen(false);
+                          }}
                           disabled={{ before: new Date() }}
                           initialFocus
                         />
@@ -795,11 +801,13 @@ export function TodoFormModal({
                             variant="ghost"
                             size="sm"
                             className="w-full"
-                            onClick={() =>
+                            onClick={() => {
+                              // 4. [UX 개선] 마감일을 제거하면 폼의 값을 변경하고, Popover를 닫습니다.
                               setValue('dueDate', null, {
                                 shouldDirty: true,
-                              })
-                            }
+                              });
+                              setDueDatePopoverOpen(false);
+                            }}
                           >
                             마감일 제거
                           </Button>
@@ -977,7 +985,10 @@ export function TodoFormModal({
                                 name="repeatRule.endDate"
                                 control={control}
                                 render={({ field }) => (
-                                  <Popover>
+                                  <Popover
+                                    open={isEndDatePopoverOpen}
+                                    onOpenChange={setEndDatePopoverOpen}
+                                  >
                                     <PopoverTrigger asChild>
                                       <Button
                                         variant="outline"
@@ -996,9 +1007,12 @@ export function TodoFormModal({
                                       <Calendar
                                         mode="single"
                                         selected={field.value ? parseISO(field.value) : undefined}
-                                        onSelect={(date) =>
-                                          field.onChange(date ? format(date, 'yyyy-MM-dd') : null)
-                                        }
+                                        onSelect={(date) => {
+                                          field.onChange(
+                                            date ? format(date, 'yyyy-MM-dd') : null,
+                                          );
+                                          setEndDatePopoverOpen(false);
+                                        }}
                                         disabled={{
                                           before: minEndDate || new Date(),
                                         }}
@@ -1010,11 +1024,12 @@ export function TodoFormModal({
                                           variant="ghost"
                                           size="sm"
                                           className="w-full"
-                                          onClick={() =>
+                                          onClick={() => {
                                             setValue('repeatRule.endDate', null, {
                                               shouldDirty: true,
-                                            })
-                                          }
+                                            });
+                                            setEndDatePopoverOpen(false);
+                                          }}
                                         >
                                           종료일 제거
                                         </Button>

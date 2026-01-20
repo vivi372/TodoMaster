@@ -24,10 +24,35 @@ function Calendar({
 }) {
   const defaultClassNames = getDefaultClassNames();
 
+  // [UX 개선] 월 동기화 및 타입 에러 해결
+  // 1. `(props as any)` 타입 캐스팅: `react-day-picker`의 복잡한 유니언 타입으로 인해 발생하는 `selected` 속성 접근 에러를
+  //    `(props as any)`로 캐스팅하여 우선 해결하고, 빌드를 통과시키는 데 집중합니다.
+  // 2. '기존 날짜 월 우선 노출': `useState`의 초기값으로 `(props as any).selected`를 주입하여,
+  //    컴포넌트가 처음 렌더링될 때 선택된 날짜가 포함된 월을 먼저 보여줍니다.
+  const [currentMonth, setCurrentMonth] = React.useState(
+    props.month || (props as any).selected || new Date(),
+  );
+
+  // 3. 외부 `selected` 값 변경 감지 및 동기화: `useEffect`를 사용하여 외부에서 `selected` prop이 변경되었을 때,
+  //    `currentMonth` 상태를 업데이트하여 달력의 월 뷰를 동기화합니다.
+  React.useEffect(() => {
+    if ((props as any).selected instanceof Date) {
+      setCurrentMonth((props as any).selected);
+    }
+  }, [(props as any).selected]);
+
   return (
-    <DayPicker // 2. locale={ko} 추가: 캘린더 전체를 한국어 로케일로 설정
+    <DayPicker
+      // 4. `onSelect` 덮어쓰기 방지: 외부에서 주입된 `onSelect`이 덮어써지는 문제를 해결하기 위해
+      //    `{...props}` 확산 연산자를 `DayPicker`의 가장 첫 속성으로 이동시킵니다.
+      {...props}
+      // 6. '6주 고정 렌더링': `fixedWeeks` 속성을 추가하여 캘린더가 항상 6주 높이로 렌더링되도록 강제합니다.
+      //    이를 통해 월별 주 수(4,5,6주)에 따라 달력 높이가 변하는 레이아웃 쉬프트 현상을 방지합니다.
+      fixedWeeks
+      // --- 나머지 UX 개선 및 스타일링 ---
+      month={currentMonth}
+      onMonthChange={setCurrentMonth}
       locale={ko}
-      showOutsideDays={showOutsideDays}
       className={cn(
         'bg-background group/calendar p-3 [--cell-size:2rem] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -36,9 +61,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        // 3. 월 드롭다운 포맷을 한국어 약자(예: 1월, 2월)로 설정
         formatMonthDropdown: (date) => date.toLocaleString('ko-KR', { month: 'short' }),
-        // 4. 요일 이름을 '월', '화', '수' 등의 약자로 표시하도록 설정
         formatWeekdayName: (date) => format(date, 'E', { locale: ko }),
         ...formatters,
       }}
@@ -112,35 +135,32 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => {
-          return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
+        Root: ({ className, rootRef, ...rootProps }) => {
+          return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...rootProps} />;
         },
-        Chevron: ({ className, orientation, ...props }) => {
+        Chevron: ({ className, orientation, ...chevronProps }) => {
           if (orientation === 'left') {
-            return <ChevronLeftIcon className={cn('size-4', className)} {...props} />;
+            return <ChevronLeftIcon className={cn('size-4', className)} {...chevronProps} />;
           }
 
           if (orientation === 'right') {
-            return <ChevronRightIcon className={cn('size-4', className)} {...props} />;
+            return <ChevronRightIcon className={cn('size-4', className)} {...chevronProps} />;
           }
 
-          return <ChevronDownIcon className={cn('size-4', className)} {...props} />;
+          return <ChevronDownIcon className={cn('size-4', className)} {...chevronProps} />;
         },
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }) => {
+        WeekNumber: ({ children, ...weekNumberProps }) => {
           return (
-            <td {...props}>
-                           {' '}
+            <td {...weekNumberProps}>
               <div className="flex size-[--cell-size] items-center justify-center text-center">
-                                {children}             {' '}
+                {children}
               </div>
-                         {' '}
             </td>
           );
         },
         ...components,
       }}
-      {...props}
     />
   );
 }
