@@ -298,6 +298,11 @@ public class TodoService {
         // 현재 카테고리 관련 기능이 없어 null 처리
         todo.setCategoryId(null);
         todo.setDueDate(requestDto.getDueDate());
+
+        // 마감일 제거 시 반복 시리즈 분리 처리
+        if (requestDto.getDueDate() == null) {
+            todo.setRepeatRuleId(null);
+        }
         // repeatRuleId는 updateRepeatRule에서 별도로 처리되거나,
         // 일반 updateTodo 경로에서는 사실상 변경되지 않으므로 여기서는 명시적 null 처리 제외
         // todo.setRepeatRuleId(requestDto.getRepeatRuleId()); 
