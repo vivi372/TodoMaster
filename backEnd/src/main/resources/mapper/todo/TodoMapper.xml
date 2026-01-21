@@ -275,4 +275,11 @@
         </foreach>
     </delete>
 
+    <!-- [신규] 특정 반복 규칙에 속하는 '미완료' 상태의 모든 Todo를 삭제합니다. -->
+    <delete id="deleteIncompleteTodosByRepeatRuleId" parameterType="long">
+        DELETE FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+        AND IS_COMPLETED = 'N'
+    </delete>
+
 </mapper>

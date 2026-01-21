@@ -99,8 +99,9 @@ export interface UpdateTodoRequest {
  * @description Todo 삭제 시 범위를 지정하는 타입
  * - "ONE_TODO": 현재 Todo 인스턴스만 삭제 (반복 시리즈에 영향 없음)
  * - "FUTURE": 해당 Todo를 포함한 이후의 모든 반복 일정을 삭제
+ * - "ALL_INCOMPLETE_REPEATED": 해당 Todo가 속한 시리즈의 모든 '미완료' 상태의 반복 일정을 삭제
  */
-export type DeleteTodoScope = 'ONE_TODO' | 'FUTURE';
+export type DeleteTodoScope = 'ONE_TODO' | 'FUTURE' | 'ALL_INCOMPLETE_REPEATED';
 
 // ============================
 // API Functions
@@ -185,7 +186,7 @@ export const todoApi = {
    * @summary **Todo 삭제 API**
    * @description 주어진 ID에 해당하는 Todo 항목을 삭제합니다. 반복의 경우 삭제 범위를 지정할 수 있습니다.
    * @param {number} todoId - 삭제할 Todo의 고유 ID
-   * @param {DeleteTodoScope} deleteScope - 반복 일정 삭제 범위. "FUTURE"를 전달하면 이후 일정이 모두 삭제됩니다.
+   * @param {DeleteTodoScope} [deleteScope] - 반복 일정 삭제 범위. "FUTURE"는 이후 일정, "ALL_INCOMPLETE_REPEATED"는 미완료된 전체 반복 일정을 삭제합니다.
    * @returns {Promise<void>} 성공 시 아무것도 반환하지 않음
    * @throws {ApiResponse} API 요청 실패 시 에러 응답 객체
    */

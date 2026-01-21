@@ -101,8 +101,7 @@ export const useDeleteTodo = (options?: {
   return useMutation<number, Error, { id: number; scope?: DeleteTodoScope }>({
     /**
      * @param {number} id - 삭제할 Todo의 ID
-     * @param {DeleteTodoScope} [scope] - 반복 삭제 범위 ('ONE_TODO' 또는 'FUTURE').
-     *                                    제공되지 않으면 단일 Todo 삭제로 처리됩니다.
+     * @param {DeleteTodoScope} [scope] - 반복 삭제 범위. 기본은 단일, 'FUTURE'는 현재 포함 미래, 'ALL_INCOMPLETE_REPEATED'는 모든 미완료 항목입니다.
      */
     mutationFn: async ({ id, scope }) => {
       // API 호출 시 id와 scope를 모두 전달합니다.

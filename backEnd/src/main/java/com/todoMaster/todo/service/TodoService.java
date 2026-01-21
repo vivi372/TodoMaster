@@ -315,7 +315,7 @@ public class TodoService {
      *
      * @param todoId      삭제할 Todo의 고유 ID
      * @param userId      현재 요청을 보낸 사용자의 ID
-     * @param deleteScope 삭제 범위 ("FUTURE": 이후 일정 모두 삭제, null 또는 다른 값: 단일 항목만 삭제)
+     * @param deleteScope 삭제 범위 ("FUTURE": 이후 일정 모두 삭제, "ALL_INCOMPLETE_REPEATED": 미완료된 전체 반복 일정 삭제, null: 단일 항목만 삭제)
      * @throws TodoNotFoundException   해당 ID의 Todo를 찾을 수 없는 경우
      * @throws CustomException 해당 Todo에 대한 접근 권한이 없는 경우
      */
@@ -323,13 +323,20 @@ public class TodoService {
     public void deleteTodo(Long todoId, Long userId, String deleteScope) {
         // 1. Todo 조회 및 소유권 확인
         TodoVO todo = getTodoAndCheckOwnership(todoId, userId);
+        Long repeatRuleId = todo.getRepeatRuleId();
 
-        // 2. 반복 Todo의 "이후 일정 삭제" 처리
-        if ("FUTURE".equalsIgnoreCase(deleteScope) && todo.getRepeatRuleId() != null) {
+        // 2. 삭제 범위에 따른 분기 처리
+        if ("FUTURE".equalsIgnoreCase(deleteScope) && repeatRuleId != null) {
+            // 2-1. 반복 Todo의 "이후 일정 삭제" 처리
             log.info("반복 Todo의 이후 일정 삭제: todoId={}", todoId);
             repeatService.deleteRepeatTodosAfter(todoId);
-        } else {
-            // 3. 단일 Todo 삭제 (일반 Todo 또는 반복 시리즈 중 하나만 삭제)
+        } else if ("ALL_INCOMPLETE_REPEATED".equalsIgnoreCase(deleteScope) && repeatRuleId != null) {
+            // 2-2. [신규] 반복 시리즈의 "미완료된 전체 일정" 삭제 처리
+            log.info("반복 시리즈의 미완료 전체 일정 삭제: repeatRuleId={}", repeatRuleId);
+            todoMapper.deleteIncompleteTodosByRepeatRuleId(repeatRuleId);
+        }
+        else {
+            // 2-3. 단일 Todo 삭제 (일반 Todo 또는 반복 시리즈 중 하나만 삭제)
             log.info("단일 Todo 삭제: todoId={}", todoId);
             todoMapper.deleteTodo(todoId);
         }

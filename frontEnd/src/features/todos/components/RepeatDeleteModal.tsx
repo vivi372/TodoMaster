@@ -22,11 +22,11 @@ interface RepeatDeleteModalProps {
   onClose: () => void;
 }
 
-// 3. PB 가이드의 값('single', 'future')을 내부 상태로 사용합니다.
-type DeleteType = 'single' | 'future';
+// 3. PB 가이드의 값('single', 'future')과 새로운 'all_incomplete'를 내부 상태로 사용합니다.
+type DeleteType = 'single' | 'future' | 'all_incomplete';
 
 /**
- * @description 반복 Todo의 삭제 범위를 선택하는 모달. UI가 PB 가이드에 맞춰 전면 개편되었습니다.
+ * @description 반복 Todo의 삭제 범위를 선택하는 모달. UI가 PB 가이드에 맞춰 전면 개편되었습니다. '미완료 전체 삭제' 옵션이 추가되었습니다.
  */
 export function RepeatDeleteModal({ todoId, onSuccess, onClose }: RepeatDeleteModalProps) {
   // 4. 내부 상태의 기본값을 'future'로 설정합니다. (더 파괴적인 옵션을 기본으로 하여 사용자 주의를 환기)
@@ -49,10 +49,12 @@ export function RepeatDeleteModal({ todoId, onSuccess, onClose }: RepeatDeleteMo
       return;
     }
 
+    // 5-1. 내부 상태(DeleteType)를 API 스코프(DeleteTodoScope)로 변환하는 맵입니다.
     const scopeApi: DeleteTodoScope = {
       single: 'ONE_TODO',
       future: 'FUTURE',
-    }[selectedDeleteType];
+      all_incomplete: 'ALL_INCOMPLETE_REPEATED', // '미완료 전체 삭제' 옵션에 대한 API 스코프 추가
+    }[selectedDeleteType] as DeleteTodoScope;
 
     deleteTodoMutation.mutate({ id: todoId, scope: scopeApi });
   }, [todoId, selectedDeleteType, deleteTodoMutation]);
@@ -140,7 +142,10 @@ export function RepeatDeleteModal({ todoId, onSuccess, onClose }: RepeatDeleteMo
             <div className="flex items-start space-x-3">
               <RadioGroupItem value="future" id="delete-future" className="mt-0.5" />
               <div className="flex-1">
-                <Label htmlFor="delete-future" className="font-medium text-foreground cursor-pointer">
+                <Label
+                  htmlFor="delete-future"
+                  className="font-medium text-foreground cursor-pointer"
+                >
                   이후 일정 모두 삭제 (기본)
                 </Label>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -156,6 +161,47 @@ export function RepeatDeleteModal({ todoId, onSuccess, onClose }: RepeatDeleteMo
                   <p className="font-semibold">주의</p>
                   <p className="text-xs">
                     이 옵션은 현재 일정을 포함한 모든 미래의 반복 일정을 영구적으로 삭제합니다.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* 13. [추가된 옵션] 전체 반복 일정 삭제 (미완료 항목만) */}
+          <div
+            className={cn(
+              'flex flex-col p-4 rounded-lg border-2 transition-colors cursor-pointer',
+              selectedDeleteType === 'all_incomplete'
+                ? 'border-destructive bg-destructive/5'
+                : 'border-gray-200 hover:border-gray-300',
+            )}
+            onClick={() => setSelectedDeleteType('all_incomplete')}
+          >
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem
+                value="all_incomplete"
+                id="delete-all-incomplete"
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <Label
+                  htmlFor="delete-all-incomplete"
+                  className="font-medium text-foreground cursor-pointer"
+                >
+                  전체 반복 일정 삭제 (미완료 항목만)
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  이 반복 시리즈에 속한 모든 &apos;미완료&apos; 상태의 일정을 삭제합니다.
+                </p>
+              </div>
+            </div>
+            {/* 14. [핵심] 새로운 옵션에 대한 경고 메시지를 추가하여 사용자에게 명확한 정보를 제공합니다. */}
+            {selectedDeleteType === 'all_incomplete' && (
+              <div className="relative mt-3 flex items-start gap-3 rounded-lg border border-yellow-500 bg-yellow-50 p-3 text-sm text-yellow-800">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 text-yellow-600" />
+                <div className="flex-1">
+                  <p className="font-semibold">데이터 보존 안내</p>
+                  <p className="text-xs">
+                    이 옵션은 이미 완료된 일정은 기록 보존을 위해 삭제하지 않습니다.
                   </p>
                 </div>
               </div>

@@ -32,4 +32,10 @@ public interface TodoMapper {
                                  @Param("memo") String memo,
                                  @Param("priority") Integer priority);
     void deleteTodos(List<Long> todoIds);
+
+    /**
+     * 특정 반복 규칙에 속하는 모든 '미완료(Incomplete)' 상태의 Todo를 삭제합니다.
+     * @param repeatRuleId 삭제할 Todo들이 속한 반복 규칙의 ID
+     */
+    void deleteIncompleteTodosByRepeatRuleId(Long repeatRuleId);
 }
