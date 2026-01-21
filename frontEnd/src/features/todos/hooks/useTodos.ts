@@ -27,7 +27,10 @@ export const useGetTodos = () => {
  * @param {Object} options - useMutation에 전달할 추가 옵션 (예: onSuccess)
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useCreateTodo = (options?: { onSuccess?: (data: Todo) => void }) => {
+export const useCreateTodo = (options?: {
+  onSuccess?: (data: Todo) => void;
+  onError?: (error: Error) => void;
+}) => {
   const queryClient = useQueryClient();
 
   return useMutation<Todo, Error, CreateTodoRequest>({
@@ -40,7 +43,10 @@ export const useCreateTodo = (options?: { onSuccess?: (data: Todo) => void }) =>
       // 옵션으로 전달된 onSuccess 콜백 실행
       options?.onSuccess?.(data);
     },
-    // onError는 queryClient에 설정된 전역 에러 핸들러가 처리
+    // 전역 에러 핸들러가 실행된 후, 추가적인 개별 에러 처리가 필요할 경우를 위해 onError 콜백을 호출합니다.
+    onError: (error) => {
+      options?.onError?.(error);
+    },
   });
 };
 
@@ -48,7 +54,10 @@ export const useCreateTodo = (options?: { onSuccess?: (data: Todo) => void }) =>
  * @description Todo를 수정하는 useMutation 커스텀 훅.
  * @returns useMutation의 반환값 (mutate, isPending 등)
  */
-export const useUpdateTodo = (options?: { onSuccess?: (data: Todo) => void }) => {
+export const useUpdateTodo = (options?: {
+  onSuccess?: (data: Todo) => void;
+  onError?: (error: Error) => void;
+}) => {
   const queryClient = useQueryClient();
 
   return useMutation<Todo, Error, { id: number; payload: UpdateTodoRequest }>({
@@ -66,17 +75,14 @@ export const useUpdateTodo = (options?: { onSuccess?: (data: Todo) => void }) =>
     /**
      * @description mutation이 성공하든 실패하든, 완료된 후에 항상 실행됩니다.
      * 여기서 Todo 목록 쿼리를 무효화(invalidate)하여 데이터 재조회를 유발합니다.
-     *
-     * 1. `queryClient.invalidateQueries`가 `QUERY_KEYS.todos`를 포함하는 모든 쿼리를 'stale' 상태로 만듭니다.
-     * 2. `TodoPage.tsx`의 `useGetTodos` 훅이 사용하는 쿼리가 'stale' 상태가 되었으므로, React Query는 자동으로 데이터를 다시 가져옵니다(refetch).
-     * 3. 새로운 데이터가 수신되면, `TodoPage.tsx` 컴포넌트가 리렌더링됩니다.
-     * 4. `useMemo`로 계산된 `activeTodos`와 `completedTodos` 목록이 새로운 데이터로 다시 계산됩니다.
-     * 5. 결과적으로, 완료 상태가 변경된 Todo 항목이 UI 상에서 '진행 중' 목록과 '완료됨' 목록 사이를 이동하게 됩니다.
      */
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: todoQueryKeys.all });
     },
-    // onError는 queryClient에 설정된 전역 에러 핸들러가 처리합니다.
+    // 전역 에러 핸들러가 실행된 후, 추가적인 개별 에러 처리가 필요할 경우를 위해 onError 콜백을 호출합니다.
+    onError: (error) => {
+      options?.onError?.(error);
+    },
   });
 };
 
