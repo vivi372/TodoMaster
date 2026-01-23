@@ -108,4 +108,43 @@
             REPEAT_RULE_ID = #{repeatRuleId}
     </delete>
 
+    <!--
+        ================================================================================
+        배치(Batch) 작업용 쿼리
+        ================================================================================
+    -->
+
+    <!--
+        활성 상태인 모든 반복 규칙을 조회합니다.
+        - 활성 조건: 종료일(END_DATE)이 NULL이거나, 오늘 날짜({today})보다 크거나 같은 경우
+    -->
+    <select id="findAllActiveRules" parameterType="java.time.LocalDate" resultMap="repeatRuleResultMap">
+        SELECT
+            REPEAT_RULE_ID,
+            TYPE,
+            INTERVAL_VALUE,
+            WEEK_DAYS,
+            END_DATE,
+            CREATED_AT
+        FROM
+            TODO_REPEAT_RULE
+        WHERE
+            END_DATE IS NULL OR END_DATE >= #{today}
+    </select>
+
+    <!--
+        어떤 TODO 테이블의 행에서도 참조되지 않는 '고아 반복 규칙'을 삭제합니다.
+        - 서브쿼리: TODO 테이블에 해당 REPEAT_RULE_ID가 존재하는지 확인합니다.
+        - NOT EXISTS: 서브쿼리의 결과가 존재하지 않는 행만 삭제 대상이 됩니다.
+    -->
+    <delete id="deleteOrphanedRules">
+        DELETE FROM
+            TODO_REPEAT_RULE
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM TODO
+            WHERE TODO.REPEAT_RULE_ID = TODO_REPEAT_RULE.REPEAT_RULE_ID
+        )
+    </delete>
+
 </mapper>

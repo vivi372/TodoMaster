@@ -282,4 +282,37 @@
         AND IS_COMPLETED = 'N'
     </delete>
 
+    <!--
+        ================================================================================
+        배치(Batch) 작업용 쿼리
+        ================================================================================
+    -->
+
+    <!--
+        배치 생성의 기준이 될, 특정 반복 규칙에 속하는 첫 번째 Todo 항목을 조회합니다.
+        - ORDER BY: 생성일이 가장 빠른 것을 기준으로 삼기 위해 CREATED_AT 오름차순 정렬
+        - FETCH FIRST 1 ROWS ONLY: Oracle 12c 이상에서 사용 가능한 표준 SQL로, 가장 상위 1개 행만 가져옵니다.
+    -->
+    <select id="findFirstByRepeatRuleId" parameterType="long" resultMap="todoResultMap">
+        SELECT *
+		FROM (
+		    SELECT *
+		    FROM TODO
+		    WHERE REPEAT_RULE_ID = #{repeatRuleId}
+		    ORDER BY CREATED_AT ASC, TODO_ID ASC 
+		)
+		WHERE ROWNUM = 1
+    </select>
+
+    <!--
+        중복 생성을 방지하기 위해, 특정 반복 규칙으로 이미 생성된 모든 Todo의 날짜(DUE_DATE)를 조회합니다.
+        - DISTINCT: 중복된 날짜를 제거하고 고유한 날짜 목록만 반환합니다.
+        - 결과 타입: Java의 Set<LocalDate>으로 매핑되어 처리됩니다.
+    -->
+    <select id="findDueDatesByRepeatRuleId" parameterType="long" resultType="java.time.LocalDate">
+        SELECT DISTINCT DUE_DATE
+        FROM TODO
+        WHERE REPEAT_RULE_ID = #{repeatRuleId}
+    </select>
+
 </mapper>
