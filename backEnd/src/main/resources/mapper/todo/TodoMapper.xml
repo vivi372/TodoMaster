@@ -114,21 +114,19 @@
             </if>
             <!-- MEMO는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
             MEMO = #{memo},
-            <!-- isCompleted 필드는 'Y' 또는 'N' 문자열 값으로 업데이트됩니다. -->
             <if test="isCompleted != null">
                 IS_COMPLETED = #{isCompleted},
+                <!-- [수정] 완료 여부(isCompleted) 값에 따라 완료 시간(COMPLETED_AT)을 자동으로 설정합니다. -->
+                <!-- 'Y'이면 현재 시간을, 'N'이면 NULL을 저장하여 데이터 정합성을 보장합니다. -->
+                <choose>
+                    <when test="isCompleted == 'Y'.toString()">
+                        COMPLETED_AT = SYSDATE,
+                    </when>
+                    <otherwise>
+                        COMPLETED_AT = NULL,
+                    </otherwise>
+                </choose>
             </if>
-            <!-- DUE_DATE는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
-            DUE_DATE = #{dueDate},
-            <!-- CATEGORY_ID는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
-            CATEGORY_ID = #{categoryId},
-            <!-- PRIORITY는 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
-            PRIORITY = #{priority},
-            <if test="repeatRuleId != null">
-                REPEAT_RULE_ID = #{repeatRuleId},
-            </if>
-            <!-- COMPLETED_AT은 NULL 허용 필드이므로, null 값이 들어오면 DB에 NULL로 업데이트 되도록 if 조건 제거 -->
-            COMPLETED_AT = #{completedAt},
             UPDATED_AT = SYSDATE
         </set>
         WHERE TODO_ID = #{todoId}

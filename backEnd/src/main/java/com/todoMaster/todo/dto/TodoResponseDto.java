@@ -68,6 +68,11 @@ public class TodoResponseDto {
          */
         private Date updatedAt;
 
+        /**
+         * Todo 항목의 완료 일시
+         */
+        private Date completedAt;
+
     /**
      * 이 Todo와 연관된 반복 규칙 정보.
      * 반복 설정이 없는 경우 null이 됩니다.
@@ -95,6 +100,7 @@ public class TodoResponseDto {
                     .dueDate(vo.getDueDate())
                     .createdAt(vo.getCreatedAt())
                     .updatedAt(vo.getUpdatedAt())
+                    .completedAt(vo.getCompletedAt()) // [추가] 완료 시간 필드 매핑
                     .repeatVO(vo.getRepeatVO()) // repeatVO 필드 추가
                     .build();
         }

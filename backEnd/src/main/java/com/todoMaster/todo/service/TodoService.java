@@ -307,6 +307,9 @@ public class TodoService {
         // 일반 updateTodo 경로에서는 사실상 변경되지 않으므로 여기서는 명시적 null 처리 제외
         // todo.setRepeatRuleId(requestDto.getRepeatRuleId()); 
         // todo.setCompletedAt(requestDto.getCompletedAt());
+        // [주석 추가] completedAt 필드는 DTO에서 직접 값을 받지 않습니다.
+        // 대신, isCompleted 값('Y' 또는 'N')에 따라 TodoMapper.xml의 updateTodo 쿼리에서
+        // SYSDATE 또는 NULL로 자동 처리됩니다. 데이터 정합성을 위한 설계입니다.
     }
 
     /**

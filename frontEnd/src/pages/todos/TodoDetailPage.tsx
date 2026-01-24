@@ -278,6 +278,13 @@ export default function TodoDetailPage() {
                     {todo.title}
                   </h2>
                   {/* //TODO: 완료일자 필드 추가되면 반영 필요 (현재 API 스펙에 없음) */}
+                  {/* [추가] isCompleted가 'Y'이고 completedAt 날짜가 존재할 때 완료 일자를 표시합니다. */}
+                  {isCompleted && todo.completedAt && (
+                    <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>완료일: {formatDate(todo.completedAt)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">

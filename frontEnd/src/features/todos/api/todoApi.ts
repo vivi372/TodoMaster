@@ -36,6 +36,10 @@ export interface Todo {
    */
   updatedAt: string;
   /**
+   * @description Todo 항목의 완료 일시. ISO 8601 형식의 문자열이거나 null 입니다.
+   */
+  completedAt: string | null;
+  /**
    * @description 이 Todo가 반복 일정의 일부인 경우, 반복 규칙 정보.
    */
   repeatVO?: RepeatVO;

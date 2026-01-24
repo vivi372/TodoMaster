@@ -9,11 +9,13 @@ import {
   Trash2,
   Edit,
   StickyNote,
+  CheckCircle2, // 추가
+  Circle, // 추가
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/ui/badge';
-import { Checkbox } from '@/shared/ui/checkbox';
+// import { Checkbox } from '@/shared/ui/checkbox'; // 삭제
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -146,16 +148,22 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
       }}
     >
       <div className="flex items-start gap-3">
-        {/* 완료/미완료 토글 체크박스 */}
-        <motion.div whileTap={{ scale: 0.9 }} className="flex-shrink-0 mt-1">
-          <Checkbox
-            // isCompleted는 이제 'Y'/'N'이므로, 'Y'일 때 checked 되도록 변환합니다.
-            checked={todo.isCompleted === 'Y'}
-            // 체크박스 상태 변경 시, 현재 상태에 따라 'Y' 또는 'N'을 토글하여 전달합니다.
-            onCheckedChange={() => onToggle(todo.todoId, todo.isCompleted === 'Y' ? 'N' : 'Y')}
-            className="h-5 w-5 rounded-md"
-          />
-        </motion.div>
+        {/* 완료/미완료 토글 버튼 - TodoDetailPage와 스타일 동기화 */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => {
+            e.stopPropagation(); // 상위 div의 onClick 이벤트(상세페이지 이동) 방지
+            onToggle(todo.todoId, todo.isCompleted === 'Y' ? 'N' : 'Y');
+          }}
+          className="flex-shrink-0 mt-1"
+          aria-label={todo.isCompleted === 'Y' ? '미완료로 변경' : '완료로 변경'}
+        >
+          {todo.isCompleted === 'Y' ? (
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+          ) : (
+            <Circle className="h-5 w-5 text-gray-300 hover:text-primary transition-colors" />
+          )}
+        </motion.button>
 
         {/* Todo 주요 정보 (제목, 날짜, 태그 등) */}
         <div className="flex-1 min-w-0 space-y-2">
@@ -168,6 +176,16 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
           >
             {todo.title}
           </h3>
+
+          {/* [추가] 완료된 항목에 한해 완료 날짜를 작고 연하게 표시합니다. */}
+          {todo.isCompleted === 'Y' && todo.completedAt && (
+            <div className="text-xs text-gray-400">
+              {new Date(todo.completedAt).toLocaleDateString('ko-KR', {
+                month: '2-digit',
+                day: '2-digit',
+              })} 완료
+            </div>
+          )}
 
           {/* 
             [반응형 디자인 수정]
